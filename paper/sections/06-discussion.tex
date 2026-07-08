@@ -3,20 +3,19 @@
 \section{讨论}
 \label{sec:discussion}
 
-\subsection{Family Cap 的``均值降/峰值升''悖论}
+\subsection{Family Cap 的 ``均值降/峰值升'' 悖论}
 \label{sec:mf-paradox}
 
-旧 sweep 的族数上限实验揭示了一个违反直觉的规律:
+小范围 sweep 的族数上限实验揭示了一个违反直觉的规律:
 mf=1→mf=2→mf=4→mf=8 时,均值从 0.6984 下降至 0.6306,
 但全局峰值却由 mf=1 的 0.7999 升至 mf=8 的 \textbf{0.8233}。
 
 这与神经架构搜索 (NAS) 的经验规律一致:
 更大的搜索空间不一定带来更好的均值,但峰值通常更高
-(\cite{liu2018darts, real2019regularized})。
-从激活族数分布看,mf=8 运行中 81.8% 最终只保留 active≤3 的族,
-且全场最高分 0.8233 本身仅 active=2 (即 6/8 族被关闭)。
-这说明 mf=k 的实际作用是把 ES 初始化为 k 组独立的 1-族起点,
-而非真正同时激活 k 族进行联合优化。
+(\cite{liu2018darts, real2019regularized})。从激活族数分布看,mf=8 运行
+中 81.8\% 最终只保留 active≤3 的族,且全场最高分 0.8233 本身仅 active=2
+(即 6/8 族被关闭)。这说明 mf=k 的实际作用是把 ES 初始化为 k 组独立的
+1-族起点,而非真正同时激活 k 族进行联合优化。
 当某个种子恰好落在 ``对的多族组合'' 邻域时,多族可突破单族天花板;
 当所有种子都落在 ``远离任何好解'' 的邻域时,多族反而稀释了最强信号。
 
@@ -28,21 +27,21 @@ mf=1→mf=2→mf=4→mf=8 时,均值从 0.6984 下降至 0.6306,
 \subsection{两类失败模式的机制分离}
 \label{sec:fail-modes}
 
-第 §5.4 节的消融数据将失败模式清晰分为两类,机制不同:
+第~\ref{sec:mask-fam-heatmap} 节的消融数据将失败模式清晰分为两类,机制不同:
 
 \noindent\textbf{(1) 预算受限型 (chebyshev-4, 0.1573)。}
-chebyshev-4 邻域严格包含 chebyshev-2,
-理论上 chebyshev-2 的最优解是其搜索空间的子集,
-但实际 chebyshev-4 得分低 0.59 分。
-根因不是 ``无解'',而是 chebyshev-4 的 80 位 cells mask 占据 $2^{80}$ 种取值,叠加 birth ($2^9$) + survive ($2^9$) + priority ($2^4$) 后,单族总搜索空间 $=2^{103}=2^{80}\times2^{23}$; $200\times500$ 的 $10^5$ 预算对其 $2^{103}$ 子空间过于稀疏,
-ES 在大量无梯度平台上原地踏步,从未接近 chebyshev-2 风格的局部最优。
+chebyshev-4 邻域严格包含 chebyshev-2,理论上 chebyshev-2 的最优解是其
+搜索空间的子集,但实际 chebyshev-4 得分低 0.59 分。80 位 cells mask 占据
+$2^{80}$ 种取值,叠加 birth + survive + priority 后,单族总搜索空间
+$=2^{103} = 2^{80}\times 2^{23}$;$200\!\times\!500$ 的 $10^5$ 预算对其
+$2^{103}$ 子空间过于稀疏,ES 在大量无梯度平台上原地踏步,从未接近
+chebyshev-2 风格的局部最优。
 \textbf{这一类失败来自预算约束,是高维搜索的固有挑战。}
 
 \noindent\textbf{(2) 表征受限型 (manhattan-1, 0.4205)。}
-manhattan-1 是 4-邻域,每个元胞每步最多感知 4 个邻居;
-而走廊结构需要 ``沿走廊方向存活 + 左右墙存活'' 的二阶条件,
-4 邻域只能凑巧出现,无法稳定涌现。
-与 manhattan-2 (8 邻域,直接编码对角线存活条件) 差 0.358 分。
+manhattan-1 是 4-邻域,每个元胞每步最多感知 4 个邻居;而走廊结构需要
+``沿走廊方向存活 + 左右墙存活'' 的二阶条件,4 邻域只能凑巧出现,无法
+稳定涌现。与 manhattan-2 (8 邻域,直接编码对角线存活条件) 差 0.358 分。
 \textbf{这一类失败来自模板本身的信息瓶颈,增加预算无法解决。}
 
 \medskip\noindent\textbf{注意:}
@@ -51,92 +50,64 @@ manhattan-1 是 4-邻域,每个元胞每步最多感知 4 个邻居;
 后者是表征能力问题 (必须换模板,增加邻域半径或跳接结构才能解决)。
 将二者混为一谈会导致错误的调参方向。
 
-\subsection{Bellot $F$ 的 smoking gun:单路径反例上的方向误判}
+\subsection{Bellot $F$ 的 smoking gun: 单路径反例上的方向误判}
 \label{sec:bellot-smoking-gun}
 
-\begin{figure}[H]
-\centering
-\begin{minipage}{0.48\linewidth}\centering
-\includegraphics[width=\linewidth]{../figures/v2/fig_15pattern_v3.png}
-{\footnotesize\textbf{(A)} 15-pattern: maze\_quality vs Bellot $F$}
-\end{minipage}\hfill
-\begin{minipage}{0.48\linewidth}\centering
-% (B) top6 grids below
-\vspace{0pt}
-\end{minipage}
-\caption{\textbf{15-pattern 基准:maze\_quality 单独视图 (§4 的 fig:15pat 包含 Bellot $F$ 对照)。}}
-\label{fig:15pattern-v3}
-\end{figure}
+在 15-pattern 基准上, $maze\_quality$ 与 Bellot $F$ 的表现形成鲜明对比
+(见 §\ref{sec:15pat} 的图~\ref{fig:15pat-mq} 与图~\ref{fig:15pat-bellot}):
 
-在 15-pattern 基准上,maze\_quality 与 Bellot $F$ 的表现形成鲜明对比:
-
-\begin{itemize}\itemsep0pt\topsep2pt
-  \item \textbf{maze\_quality:} 真迷宫均值 0.711,伪迷宫均值 0.000,间隔 +0.711,
-        误判 0/9 (阈值 0.5)
-  \item \textbf{Bellot $F$:} 真迷宫均值 100.882,伪迷宫均值 292.205,
-        间隔 $-191.323$ (方向反转!);
-        misclassifications: 4/9: Spiral ($F=11.85$) 与 3 个 F=0 pattern (Horizontal Stripes/Concentric Rings/Honeycomb) 均被 Bellot $F$ 判为比真迷宫更像迷宫
+\begin{itemize}[itemsep=0pt, topsep=2pt]
+  \item \textbf{maze\_quality}: 真迷宫均值 0.711,伪迷宫均值 0.000,
+        间隔 +0.711,误判 0/9 (阈值 0.5)。
+  \item \textbf{Bellot $F$}: 真迷宫均值 100.882,伪迷宫均值 292.205,
+        间隔 $-191.323$ (方向反转!);误判 4/9:Spiral ($F=11.85$) 与 3 个
+        $F=0$ 图案 (Horizontal Stripes / Concentric Rings / Honeycomb)
+        全部被 Bellot $F$ 判为 ``比真迷宫更像迷宫''。
 \end{itemize}
 
 Bellot $F = \nu/\delta$ 失败的结构性原因:
 $F$ 奖励 ``少死端墙 + 长直径'',而 DFS (twistiness=7.44, $\nu=114$)
 与 Spiral (twistiness=0.84, $\nu=10$) 的 $\nu$ 均极低 (都是 1 路贯通),
 使两者 $F$ 都小;但 Spiral 的 diameter/$\nu$ 比更高,
-导致 $F=11.85$ < $F=15.33$,即 Bellot $F$ 把 Spiral 排到 DFS 之前。
-另外 3 个伪迷宫 (Horizontal Stripes/Concentric Rings/Honeycomb) 因 $\nu=0$
-导致 $F=0$,被 Bellot $F$ 判为 ``最像迷宫''。
+导致 $F=11.85 < F=15.33$,即 Bellot $F$ 把 Spiral 排到 DFS 之前。
+另外 3 个伪迷宫 (Horizontal Stripes / Concentric Rings / Honeycomb)
+因 $\nu=0$ 导致 $F=0$,被 Bellot $F$ 判为 ``最像迷宫''。
 
-maze\_quality 的 $M_s$ 显式惩罚单路径占比过高
+$maze\_quality$ 的 $M_s$ 显式惩罚单路径占比过高
 ($L_{\max}/N>0.5$ 时单调降至 0),$M_j$ 显式奖励分叉比例 $\approx 0.10$,
-二者共同拒收 Spiral --- 这不是巧合,而是设计目标驱动。
+二者共同拒收 Spiral --- 这是设计目标驱动,不是巧合。
 
-\begin{figure}[H]
-\centering
-\begin{minipage}{0.48\linewidth}\centering
-\includegraphics[width=\linewidth]{../figures/v2/fig_top6_grids.png}
-{\footnotesize\textbf{(A)} Top 6 ckpts: 网格可视化}
-\end{minipage}\hfill
-\begin{minipage}{0.48\linewidth}\centering
-\includegraphics[width=\linewidth]{../figures/v2/fig_8dim_radar.png}
-{\footnotesize\textbf{(B)} 8 维子度量雷达 (top ckpt)}
-\end{minipage}
-\caption{\textbf{Top 6 检查点可视化与子度量雷达。}}
-\label{fig:top6-radar}
-\end{figure}
-
-\subsection{Big Sweep 的意义:200×500 已接近饱和}
+\subsection{大范围 sweep 的意义: $200\!\times\!500$ 已接近饱和}
 \label{sec:big-sweep-meaning}
 
-4/5 完成率下,big\_sweep 最高 0.8195 与旧 $200\times500$ 最高 0.8233
+大范围 sweep 5/5 全部完成,最高 0.8195 与小范围 sweep 最高 0.8233
 几乎持平 --- 这一结果有重要意义:
 
-\textbf{manhattan-2/mf8 在 $40\times60$ 网格上已接近该配置的理论上界。}
-将网格面积扩大 170 倍后,峰值并未显著提升;
-s2222 在 gen≈850 处卡在 0.776 (远低于 0.8195),说明同一配置
-下不同随机种子会导致不同的收敛命运。
-这表明 $2^{1648}$ 的搜索空间中,manhattan-2/mf8 的吸引域
-在 $40\times60$ 上已被充分采样;
-更大的 pop×gens 带来边际收益递减。
+\noindent\textbf{manhattan-2/mf=8 在 $40\!\times\!60$ 网格上已接近该配置的
+理论上界。}将网格面积扩大 170 倍后,峰值并未显著提升;
+5 个随机种子中,s444 与 s1111 落在 ``好的吸引域'',s3333 / s2222 落在
+``较差的吸引域'' (0.7909 / 0.7758),说明同一配置下不同随机种子会导致
+不同的收敛命运。这表明 $2^{1648}$ 的搜索空间中,manhattan-2/mf=8
+的吸引域在 $40\!\times\!60$ 上已被充分采样;更大的 pop$\times$gens 带来
+边际收益递减。
 
-n=2 不足以量化峰值的不确定区间,
-但 big\_sweep top-2 均值 (s444+s1111 的 0.8166) 与旧 sweep 峰值 (0.8233) 仅差 0.007,
-处于合理波动范围。s2222 卡在 0.776 这一现象也说明:
-即便同一配置,不同随机种子会得到截然不同的收敛命运,
-暗示 $2^{1648}$ 搜索空间中山值稀疏,峰值估计方差较大。
+5-run 均值 0.8020 与小范围 sweep 峰值 (0.8233) 差 0.021,在搜索空间的
+方差范围内。top-2 均值 (s444+s1111) 0.8166 与 0.8233 仅差 0.007,
+说明 ``同配置在两个尺度上达到的水平'' 接近。
 
 \medskip\noindent\textbf{开放问题:}
-若将 mask 换为 manhattan-3 或 chebyshev-3,
-big\_sweep 峰值是否会显著超过 0.8233?
-从旧 sweep 的 chebyshev-3 均值 (0.7764) 来看潜力存在,
-但需要新的完整 big\_sweep run 才能确认。
+若将 mask 换为 manhattan-3 或 chebyshev-3,大范围 sweep 峰值是否会显著
+超过 0.8233?从小范围 sweep 的 chebyshev-3 均值 (0.7764) 来看潜力存在,
+但需要新的完整大范围 run 才能确认。
 
 \subsection{局限与未来工作}
 \label{sec:limitations}
 
-maze\_quality 的子度量权重 (如 $M_c=0.40$, $M_t=0.50$) 由经验决定,
-理论上可通过元学习自动调优,但本文未涉及。
-15-pattern 数据集虽覆盖常见几何反例,仍非完备;可加入分形迷宫、Hilbert 曲线等拓扑反例。
-ES 种群规模受 WebGPU dispatch 单次调用预算限制,$200\times500$ 已是浏览器端合理上限;
-若部署到服务器端 GPU,可尝试更大 pop$\times$gens,可能把 0.8233 继续上推。
-FamilyMask 当前用 ``按优先级顺序遍历'' 执行 CA 步,等价于 ``首个触发的族即决定下一态'';
-这种 ``早退'' 语义在非 ordered ``多族投票'' 或 ``多族加权和'' 推广时需重新设计。
+$maze\_quality$ 的子度量权重 (如 $M_c=0.40$, $M_t=0.50$) 由经验决定,
+理论上可通过元学习自动调优,但本文未涉及。15-pattern 数据集虽覆盖常见
+几何反例,仍非完备;可加入分形迷宫、Hilbert 曲线等拓扑反例。ES 种群规模
+受 WebGPU dispatch 单次调用预算限制,$200\!\times\!500$ 已是浏览器端合理
+上限;若部署到服务器端 GPU,可尝试更大 pop$\times$gens,可能把 0.8233
+继续上推。FamilyMask 当前用 ``按优先级顺序遍历'' 执行 CA 步,等价于
+``首个触发的族即决定下一态'';这种 ``早退'' 语义在非 ordered
+``多族投票'' 或 ``多族加权和'' 推广时需重新设计。

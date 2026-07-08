@@ -31,22 +31,23 @@ Random Noise (50%/30%)/Checkerboard/Diagonal Stripes/Concentric Rings/Honeycomb)
 且 9 个伪迷宫中有 4 个 ($F = 0$ 的 Horizontal Stripes/Concentric Rings/Honeycomb
 加上 $F = 11.85$ 的 Spiral) 排名反低于真正的 DFS ($F = 15.33$) ,
 即 Bellot F 错误判定 ``Spiral 比 DFS 更像迷宫'',这是
-附录~D 系统审计 (\texttt{tab:repro-audit}) 中已经指出的 smoking gun
-(本节下方全部使用 \texttt{src/gpu/bellot\_metrics.js::bellotF} 真实 Bellot 2021 实现
-$F = \nu(M)/\delta(M)$,不再使用早期 \texttt{scripts/full\_mq\_v2.mjs} 的简化版
-$\nu = 1-\text{roadFrac},\, \delta = d/200$)。
+$maze\_quality$ 与 Bellot $F$ 在 15-pattern 基准上方向反转的 smoking gun
+(数值来源: \texttt{paper/data/sweep\_summary.json::15pattern})。
 
-将 FamilyMask 嵌入 $200\!\times\! 500$ 的 $(\mu{+}\lambda)$ 进化策略,WebGPU
-compute shader 加速 CA 评估,在 128 次 sweep (8 距离模板 $\times$ 4 族数
+将 FamilyMask 嵌入小范围 sweep 的 $200\!\times\!500$ 的 $(\mu{+}\lambda)$ 进化策略,
+WebGPU compute shader 加速 CA 评估,在 128 次 sweep (8 距离模板 $\times$ 4 族数
 上限 $\times$ 4 随机种子, $40\times 60$ 网格, 300 步演化) 上,成功完成 122 次,
-得到最高分 $\mathbf{0.8233}$ (manhattan-2 模板、8 族上限、种子 444)。进一步
-统计得到三组可重复观察:(i) 多族容量上限升高反而使均值下降 (mf=1: 0.6984
+得到最高分 $\mathbf{0.8233}$ (manhattan-2 模板、8 族上限、种子 444)。
+进一步统计得到三组可重复观察:(i) 多族容量上限升高反而使均值下降 (mf=1: 0.6984
 $\to$ mf=8: 0.6306),但 mf=8 的尾部拥有 0.8233 全场最高,体现 ``均值降 /
 峰值升'' 的 ``偶发突破'' 现象;(ii) chebyshev-4 模板均值仅 0.157,主因为其
 $9\times 9$ 邻域使单族搜索空间维度达 $2^{103}$,远大于 $10^5$ 次评估预算可跨越
 的初始化-最优距;(iii) manhattan-1 (4 邻域 von Neumann) 模板均值仅 0.420,
-原因是 4 邻域无法为走廊结构提供足够的二阶空间上下文。所有代码、实验数据、
-截图开源。
+原因是 4 邻域无法为走廊结构提供足够的二阶空间上下文。
+大范围 sweep (manhattan-2/mf=8, $500\!\times\!2000$ 网格, pop=500, gens=2000,
+5 个随机种子 5/5 全部完成) 最高 0.8195,与小范围 sweep 峰值 0.8233 差 0.0037,
+说明 manhattan-2/mf=8 在 $40\!\times\!60$ 网格上已接近该配置的理论上界。所有
+代码、实验数据、截图开源。
 
 \vspace{0.6em}
 \begin{center}
@@ -93,4 +94,7 @@ the $9\times 9$ neighbourhood implying a $2^{103}$ candidate space (per family) 
 the $\sim\!10^5$ evaluations available to random-init-to-optimum distance;
 (iii)~manhattan-1's poor mean ($0.420$) is caused by the 4-neighbour
 (von~Neumann) topology providing too little spatial context for corridor
-emergence. All code, data, and figures are released as open source.
+emergence. A follow-up large-scale sweep (manhattan-2/mf=8 only, $500\times 2000$ grid,
+pop=500, gens=2000, 5/5 random seeds) tops out at 0.8195, just 0.0037 below
+the small-scale peak, suggesting the small-scale run is already near the
+config's theoretical ceiling. All code, data, and figures are released as open source.

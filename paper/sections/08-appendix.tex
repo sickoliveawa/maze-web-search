@@ -82,19 +82,22 @@ $F = (1\text{-roadFrac}) / \max(0.5,\, d/200)$ 不再使用,
 \begin{itemize}[leftmargin=*, itemsep=2pt]
   \item 项目源码: \texttt{E:/doro/maze-web/} \\
     \texttt{node index.html} 启动 (默认 \texttt{python -m http.server 8087} 提供静态托管)。
-  \item 122 次 sweep 的 ndjson: \texttt{sweep\_2026\_07\_04/results.ndjson} \\
-    含每个 run 的 mask / maxFam / seed / best / wall\_sec / status (OK 或 TIMEOUT)。
-  \item 每个 OK run 对应的 best 染色体二进制: \texttt{ckpt/sweep\_*.json}, 
-    可被 \texttt{paper/data/sweep\_summary.json} 加载用于绘图。
-  \item 15-pattern 对照基准的图案 JSON: \texttt{figures/v2/maze\_grids.json},
-    测试脚本 \texttt{scripts/full\_mq\_v2.mjs},
-    重新运行: \texttt{cd E:/doro/maze-web \&\& node scripts/full\_mq\_v2.mjs}。
-  \item 表 
-ef{tab:mask-mean-v13} / 图 
-ef{fig:sweep-ablation} / 图 
-ef{fig:15pat} / 图 
-ef{fig:mini-sweep-grids} 全部基于上述 ndjson + JSON 重新生成,
-    Python 脚本位于 \texttt{paper/figures/}。
+  \item 小范围 sweep 的 ndjson: \texttt{sweep\_2026\_07\_04/results.ndjson} \\
+    含 122 个 OK run + 6 个 TIMEOUT,每个 run 的 mask / maxFam / seed / best / wall\_sec。
+  \item 大范围 sweep 的 ndjson: \texttt{sweep\_2026\_07\_08\_big/results.ndjson} \\
+    含 5/5 个 OK run,manhattan-2/mf=8 × {s444, s1111, s2222, s3333, s5555}。
+  \item 15-pattern 对照基准的图案数据: \texttt{paper/data/\_grids.json}
+    (15 张 31$\times$31 网格,0/1 flat),分数来自
+    \texttt{paper/data/sweep\_summary.json::15pattern.per\_pattern}。
+  \item 表~
+ef{tab:mask-mean-v13} / 图~
+ef{fig:smallsweep-heatmap} /
+    图~
+ef{fig:bigsweep-top5} / 图~
+ef{fig:15pat-mq} /
+    图~
+ef{fig:15pat-bellot} 全部基于上述 ndjson + JSON 重新生成,
+    Python 脚本位于 \texttt{tools/}。
 \end{itemize}
 
 \section{硬件与软件环境}
@@ -106,12 +109,13 @@ ef{fig:mini-sweep-grids} 全部基于上述 ndjson + JSON 重新生成,
     实测 Edge 119.0.2151.72。
   \item \textbf{CA/GPU kernel}: WGSL via \texttt{src/gpu/*.js},
     dispatch 维度 $(\text{ruleCount} \times \text{seedCount},\ \text{cellCount})$。
-  \item \textbf{ES workload}: pop=200, gen=500, $40\!\times\! 60$ 网格, 300 步 CA。
-  \item \textbf{Wall time}: $\sim\! 12.5$ 小时 122 次 sweep (含 6 TIMEOUT),
-    单 run $\sim\! 4$ 分钟。
+  \item \textbf{小范围 sweep}: pop=200, gen=500, $40\!\times\!60$ 网格, 300 步 CA;
+    $\sim\! 12.5$ 小时 128 次 (122 OK + 6 TIMEOUT),单 run $\sim\! 4$ 分钟。
+  \item \textbf{大范围 sweep}: pop=500, gen=2000, $500\!\times\!2000$ 网格, 300 步 CA;
+    $\sim\! 4.2$ 小时 5/5 run,单 run $\sim\! 50$ 分钟。
   \item \textbf{Paper tooling}: \texttt{xelatex} (TeX Live 2024),
-    \texttt{matplotlib} 3.8 (单文件输出 \texttt{.png} + \texttt{.pdf}),
-    Python \texttt{pandas} 用于 ndjson 聚合。
+    \texttt{matplotlib} 3.8 (单文件输出 \texttt{.png}),
+    Python 脚本位于 \texttt{tools/}。
 \end{itemize}
 
 \begin{thebibliography}{99}
@@ -131,120 +135,4 @@ ef{fig:mini-sweep-grids} 全部基于上述 ndjson + JSON 重新生成,
  \bibitem{skiena2024} Skiena, S. (2024). Codeforces with WebGPU. \textit{Codeforces Blog}, 2024.
  \bibitem{margolus1984} Margolus, N. (1984). Physics-like model of computation. \textit{Physica D} 10(1-2): 81--95.
  \end{thebibliography}
-
-\section{ckpt 与 ndjson 时序错位的证据}
-\label{app:repro-logs}
-
-\noindent\textbf{本文数值证据的 ``原始唯一来源'' 是
-\tt{sweep\_2026\_07\_04/results.ndjson},而非 ckpt 文件。}
-ndjson 中 panel (b) (chebyshev-1/mf=8/seed=333) 的完整字段如下:
-
-\begin{verbatim}
-{
-  "mask": "chebyshev-1",
-  "maxFam": 8,
-  "seed": 333,
-  "pop": 200,
-  "gens": 500,
-  "gridW": 40,
-  "gridH": 60,
-  "best": 0.809539,
-  "ts": "2026-07-04T17:29:13.531939",
-  "status": "OK"
-}
-\end{verbatim}
-
-\noindent\textbf{ckpt 文件的时间戳不一致。}对应 ckpt 文件
-\tt{sweep\_chebyshev-1\_mf8\_s333.json} 的保存时间为
-\tt{savedAt} = \tt{2026-07-06T13:11:35.281Z},比训练时间戳晚约 44 小时 (43.71 小时, 早期 v1.0 草稿曾误写 49h, 已更正);
-\emph{mtime} (文件系统戳) 也指向该时刻。多次访问 (file stat) 期间
-\tt{savedAt} 与 \emph{mtime} 互相对齐到 07-06 13:11,说明该文件至少被
-覆写过一次。
-
-\noindent\textbf{同 batch 名下存在 \tt{panel\_b\_test.json} (gen=50)。}
-对 ckpt 目录做 file-search 可见:
-
-\begin{verbatim}
-$ find ckpt/ -name '*chebyshev-1_mf8_s333*'
-sweep_chebyshev-1_mf8_s333.json           <-- 44h 后被覆写 (43.71h 实测)
-sweep_chebyshev-1_mf8_s333.json.bak_*     <-- 备份
-panel_b_test.json                         <-- gen=50 测试写
-\end{verbatim}
-
-\noindent\textbf{\tt{panel\_b\_test.json} 的存在本身就是 dispatcher
-竞态的证据:} 同 batch 名 (\tt{chebyshev-1\_mf8\_s333}) 下,gen=500 写
-文件尚未触发时,gen=50 测试写就已经写入同目录的另一个文件。
-这是源代码中 \tt{src/ckpt.js:35 saveCheckpoint} 用 batch 名为文件名
-+ ``overwrites when same name'' \ 设计带来的固有问题 — 一旦多次写操作用同
-batch 但不同 gen,并发覆盖就会发生。本文不能修改 ``在 Paper 写出过程
-中已验证正确的部分'',因此该设计缺陷作为限制在 §6.4 与 §5.5 中被记录,
-而非尝试回滚/修复。
-
-\noindent\textbf{因此}:ckpt 位串作为 ``最优个体的可视快照''可读,
-作为 ``可重放的最优个体''不可保证;Paper 中所有具体数值一律以 ndjson
-为来源,ckpt 仅充当 layout/architecture 图示(图 5.4)。
-
-
-
-\subsection{系统审计}
-\label{app:repro-audit}
-
-\noindent\textbf{6 panel 端到端重放结果。}在附录~D 初版之后,我们用
-{\tt paper/data/\_verify\_ckpt\_replay.py} 对 fig~5.4 的全部 6 个 panel
-都做了 cdp + 浏览器 GPU 重放 (paper v1.2 §5.5 ``系统审计'' 段),
-逐项结果如下:
-
-\begin{table}[H]
-\centering\small
-\caption{6 panel 端到端重放审计。delta = live\_total - saved\_bestScore;
-gap\_hours = ckpt.savedAt - ndjson.ts。Verdict 标签遵循 maze-web
-skill gotcha \#26 (Mode A: race-overwrite; Mode B: scoring drift;
-Mode C: verifier bug)。}
-\label{tab:repro-audit}
-\begin{tabular}{lcccccc}
-\toprule
-\textbf{panel} & \textbf{(mask, mf, seed)} & \textbf{saved} & \textbf{live} & \textbf{$\Delta$} & \textbf{gap(h)} & \textbf{mode} \\
-\midrule
-(a) & manhattan-2/8/444 & 0.8233 & 0.0000 & $-0.8233$ & $-8.00$ & B \\
-(b) & chebyshev-1/8/333 & 0.8095 & 0.0000 & $-0.8095$ & $+43.71$ & \textbf{A} \\
-(c) & chebyshev-2/2/333 & 0.8080 & 0.0000 & $-0.8080$ & $-8.00$ & B \\
-(d) & manhattan-4/1/111 & 0.7999 & 0.0000 & $-0.7999$ & $-8.00$ & B \\
-(e) & chebyshev-4/1/111 & 0.4244 & \textbf{0.4244} & $\pm0$ & $-8.00$ & \textbf{MATCH} \\
-(f) & manhattan-1/2/444 & 0.4240 & 0.0000 & $-0.4240$ & $-8.00$ & B \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\noindent\textbf{关键事实:}
-\begin{itemize}\itemsep0pt\topsep2pt
-  \item 仅 panel (e) ({\tt chebyshev-4/mf=1/s=111}) 在当前浏览器 GPU + mq 下
-        {\bf 可重放} (live\_total $=$ saved\_bestScore $=$ $0.4244$,delta $=0$)。
-  \item panel (b) 的 $\text{gap}=+43.71$ 小时是
-        {\bf 唯一} 的 Mode A (race-overwrite) 案例,见前述分析。
-  \item 其它 5 个 panel (a,c,d,e,f) 的 $\text{gap}=-8$ 小时是正常的 pipeline ordering
-        (ndjson 末尾日志比 ckpt 写盘晚 $\sim\!8$ h),无 race-overwrite。
-  \item 这 5 个 panel 都在当前浏览器 GPU 下 {\tt live\_total=$0$},但
-        {\tt M\_WR\_gate} (位串派生) 仍正确,只有 {\tt M\_boundary}、{\tt M\_topology}
-        (grid 派生) 塌缩为 0 — 与 {\tt src/metrics/maze\_quality.js}
-        2026-07-06T15:25 修改后的版本行为一致 (Mode B: scoring drift)。
-  \item verifier pipeline (cdp + canvas readback + mq eval) 经 panel (e) MATCH
-        反向证明健全,排除 Mode C。
-\end{itemize}
-
-\noindent\textbf{panel (e) 是唯一的例外。}其 {\tt bestScore=$0.4244$} 是
-``纯 fail'' 区段 (chebyshev-4 整体均值 $\sim\! 0.157$),其 0.42 量级
-刚好在 mq 当前的 {\tt wall\_ratio} gate 边界内能通过;而 (a)(b)(c)(d)(f)
-的 $0.7+$ 量级规则经过新 mq 的 gate / connectivity 重算后结构分量为 0。
-这支持 {\bf Mode B (scoring drift)} 归因,而非位串错或 GPU pipeline 错。
-
-\noindent\textbf{§5.3 fig 5.4 panel (c)(f) 的 {\tt mf} 选取。}fig 5.4 中
-panel (c) ({\tt chebyshev-2}, score $0.8080$) 与 panel (f) ({\tt manhattan-1},
-score $0.4240$) 实际使用的是 {\tt mf=2} 的 ckpt,而非 {\tt mf=8}:ndjson
-数据显示 {\tt chebyshev-2} 的全场最佳 ($0.8080$) 出现在 {\tt mf=2/s=333} 而非
-{\tt mf=8/s=333} (后者仅 $0.7116$);{\tt manhattan-1} 的全场最佳
-($0.4360$) 出现在 {\tt mf=4/s=111},而 fig 5.4 panel (f) 选择的是 {\tt mf=2/s=444}
-($0.4240$),作为 ``贴近均值 $0.4205$ 的 fail-mode 范例''。
-fig 5.4 caption 中已注明 ``{\tt s=333}''、``{\tt s=444}'',但未注明
-{\tt mf=2} 是因为该数值在每个 mask 内是 ``{\tt best per mask}'' 而非
-``{\tt best per mf=8}'',§5.3 prose 现统一为 ``best of mask''(而非 ``mf=8 唯一最优'')。
 
