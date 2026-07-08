@@ -1,0 +1,99 @@
+% main.tex — FamilyMask + maze_quality paper v1.0 (重新组织, 基于 2026-07-06 项目事实)
+% sko (冯卓源)
+% 编译: xelatex paper/main.tex (2 轮)
+%
+% 与 v0.7 paper_draft.tex 区别:
+%   - 重新组织骨架 (paper/main.tex + paper/sections/*.tex);
+%   - 所有事实数据从项目代码 / sweep ndjson / 参考文件重新核实;
+%   - 公式基于 maze_quality.js v4 (代码为准), 修正 v0.7 中 [0.30, 0.45] → [0.40, 0.60];
+%   - 染色体示意改用 ASCII/tabular (严肃学术, 不依赖装饰性 TikZ);
+%   - 配图全部重新生成或基于现有 figures/v2/ 真渲染.
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[UTF8,fontset=windows]{ctex}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{placeins}
+\usepackage{enumitem}
+
+% ===== 配色 (克制暖纸 + 墨黑 + 朱红) =====
+\definecolor{PaperWarm}{HTML}{F4EAD8}
+\definecolor{InkWarm}{HTML}{2C1F17}
+\definecolor{Vermilion}{HTML}{B8412F}
+\definecolor{OliveWarm}{HTML}{6B7A5C}
+\definecolor{GrayMid}{HTML}{7A6A58}
+\definecolor{GrayLight}{HTML}{A89888}
+\definecolor{SepiaLine}{HTML}{8A6A3A}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=InkWarm,
+  citecolor=InkWarm,
+  urlcolor=Vermilion,
+  pdftitle={FamilyMask: Multi-Family CA Encoding with an 8-Dimensional Maze Quality Metric},
+}
+
+\captionsetup{labelfont={small,bf,color=Vermilion},
+              textfont={small,color=InkWarm},
+              labelsep=period, font=small}
+
+\linespread{1.18}
+
+% ===== 数学定理环境 (严肃学术) =====
+\newtheoremstyle{plainstyle}{0.6em}{0.6em}{\itshape}{}{\bfseries\color{InkWarm}}{}{0.5em}{}
+\theoremstyle{plainstyle}
+\newtheorem{definition}{定义}[section]
+\newtheorem{proposition}{命题}[section]
+\newtheorem{finding}{发现}[section]
+
+\begin{document}
+
+% ===== 标题 =====
+\begin{center}
+{\LARGE\bfseries\color{InkWarm} 多族元胞自动机编码与八维迷宫质量度量}\\[0.4em]
+{\large\color{GrayMid} Multi-Family Cellular Automaton Encoding with an\\
+Eight-Dimensional Maze Quality Metric}\\[0.7em]
+{\small\itshape\color{GrayMid} sko (冯卓源)\quad$\cdot$\quad 编译于 2026 年 7 月\quad$\cdot$\quad FamilyMask / maze\_quality (maze-web)}
+\end{center}
+
+\vspace{0.4em}
+\noindent\rule{\linewidth}{0.4pt}
+\vspace{0.8em}
+
+% ===== 中英摘要 =====
+\input{sections/00-abstract}
+
+\tableofcontents
+\vspace{0.4em}
+
+\input{sections/01-intro}
+\input{sections/02-related}
+\input{sections/03-familymask}
+\input{sections/04-mazequality}
+\input{sections/05-experiments}
+\input{sections/06-discussion}
+\input{sections/07-conclusion}
+
+\section*{致谢}
+\addcontentsline{toc}{section}{致谢}
+感谢 WebGPU compute shader 在 Chromium 浏览器中的早期落地 (2023 起),使浏览器内
+大批量 CA 评估与 ES 在本文写作时已可作为日常工具。
+感谢 Bellot, Pech, Rejbrand 三位迷宫度量奠基工作 —— 虽然本文结论与其方向相反,
+但他们指出的几何反例 (螺旋、条纹) 正是本文 15-pattern 对照基准的核心。
+
+\bibliographystyle{plain}
+% 简化处理: 引用文末附录的 ref 条目 (不引用外部 .bib)
+\input{sections/08-appendix}
+
+\end{document}

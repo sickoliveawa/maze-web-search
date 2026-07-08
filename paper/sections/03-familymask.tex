@@ -1,0 +1,108 @@
+% 03-familymask.tex — FamilyMask 多族编码
+
+\section{FamilyMask 多族编码}
+\label{sec:familymask}
+
+\subsection{染色体布局}
+\label{sec:chrom}
+
+一条 FamilyMask 染色体总长 1648 位,平分为 16 个 \textbf{family slot};
+每个 slot 长 103 位,内部按 LSB $\to$ MSB 顺序分为 5 个字段,如
+表~\ref{tab:slot-layout} 所示。这一布局源自源码
+\texttt{src/search/rule\_chromosome.js::CHROM\_PARAMS}
+与 \texttt{src/search/es\_searcher.js::SLOT}。
+
+\begin{table}[H]
+\centering\small
+\caption{Family slot 内部布局 (LSB $\to$ MSB, 共 103 位)}
+\label{tab:slot-layout}
+\begin{tabular}{lcc}
+\toprule
+\textbf{字段} & \textbf{位宽 (位)} & \textbf{取值范围} \\
+\midrule
+\texttt{active}      & 1  & $\{0,1\}$ \\
+\texttt{cells mask}  & 80 & $9{\times}9$ 中心外 80 格,逐位表示是否包含该邻格 \\
+\texttt{birth}       & 9  & $B_0, B_1, \ldots, B_8$ 各一比特 \\
+\texttt{survive}     & 9  & $S_0, S_1, \ldots, S_8$ 各一比特 \\
+\texttt{priority}    & 4  & $1 \ldots 16$,自然编码 \\
+\midrule
+\texttt{合计} & \multicolumn{2}{c}{$1 + 80 + 9 + 9 + 4 = 103$ 位 / slot} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+实际启用族数由 \texttt{active} 位决定。
+ES 在变异期通过 \texttt{familyMask} 参数指定 ``允许写入哪些 slot'' (默认
+全部 16,本文实验对比 1 / 2 / 4 / 8 四个上限)。
+当全部 16 个 slot 启用时,染色体信息量为 $1648$ 位,对应 $2^{1648}$ 个候选;
+单族退化为 $103$ 位 ($2^{103}\!\approx\!2^{824}$ 个候选),仍远大于经典
+B/S 字符串 ($2^{18}$) 的规模。
+
+\subsection{距离模板约束}
+\label{sec:mask}
+
+\texttt{cells mask} 的 80 位表示一个 $9\times 9$ 邻域 (中心 $\pm 4$) 是否被该族
+视为 ``邻居位置'';但模板之外的位置被强制清零。
+本文支持两类距离模板 (距离以 $(\Delta x, \Delta y)$ 与中心的 Manhattan/Chebyshev
+距离计):
+\begin{itemize}[leftmargin=*, itemsep=0pt, topsep=0pt]
+  \item \textbf{manhattan-$N$}: $|\Delta x| + |\Delta y| \le N$;
+        适用 4 邻 ($N{=}1$)、8 邻 ($N{=}2$)、12 邻 ($N{=}3$)、24 邻 ($N{=}4$)。
+  \item \textbf{chebyshev-$N$}: $\max(|\Delta x|, |\Delta y|) \le N$;
+        适用方形邻域
+        (8 邻 $N{=}1$、24 邻 $N{=}2$、48 邻 $N{=}3$、80 邻 $N{=}4$)。
+\end{itemize}
+两族互有包含关系:chebyshev-$k$ 严格包含 chebyshev-$(k{-}1)$,
+chebyshev-2 严格包含 manhattan-2。
+这一包含关系在 \ref{sec:experiments} 节讨论 chebyshev-4 / manhattan-1
+两类失败模式时是关键。
+
+\subsection{演化执行}
+\label{sec:eval}
+
+对每个元胞 $c = (x,y)$,判定下一态 $c'$ 的流程如下
+(代码: \texttt{src/core/rule.js::Rule.evaluate}):
+\begin{enumerate}[leftmargin=*, itemsep=0pt, topsep=0pt]
+  \item 读当前态 $\texttt{self} = G(x,y)$,$\texttt{self} \in \{0,1\}$。
+  \item 按 \texttt{priority} \textbf{升序}遍历所有 \texttt{active} 族;
+        每个族独立计算该族 \texttt{cells} 子集内的活邻居数
+        $n = \sum_{(\Delta x, \Delta y) \in \texttt{cells}}
+        \mathbb{1}\big[G(x{+}\Delta x, y{+}\Delta y) > 0\big]$。
+  \item $\texttt{self}{=}0$ 时检查 $n \in \texttt{family.birth}$，
+        $\texttt{self}{=}1$ 时检查 $n \in \texttt{family.survive}$。
+  \item 首个匹配的族决定 $c'$;若无一族触发,$c' = \texttt{defaultState}=0$。
+\end{enumerate}
+
+边界外视为 0 (死),与经典 Conway 习惯一致。
+同一族内不分 ``birth-only'' 与 ``survive-only'' 两次触发,所有判定来自同一个
+\texttt{cells} 集与同一组 B/S set,
+与围棋 ``先手优先'' 的语义对应:优先级数字小者先行,优先决定下一态。
+
+\begin{proposition}[单族退化]
+当只有 1 个 family \texttt{active} 时,FamilyMask 退化为
+``$(9\!\times\!9\,{-}\,1)$ 邻域 + birth set + survive set''
+的经典广义 Conway 规则。此时 $\texttt{cells mask}$ 仅取模板内的位被保留,
+搜索空间为模板位宽 $b$ 加 18 位的 B/S set,即 $2^{b+18}$。
+取 chebyshev-1 ($b{=}8$, 即 Moore 8 邻) 即得 $2^{26}\!\approx\!6.7\!\times\!10^7$,
+正是经典 ``B/S 字符串 + 任意邻域'' 规则的搜索量级。
+\end{proposition}
+
+\subsection{染色体结构示意}
+\label{sec:chromfig}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/fig_chromosome.png}
+\caption{\textbf{FamilyMask 染色体结构示意 (以 8 族 / 16 槽为例)。}
+上方两行共 16 个 \texttt{slot},F2/F5/F9/F12 (暖朱红填充) 示意
+\texttt{active=1},其余空白为 \texttt{active=0}。
+每个 slot 内部 5 段分别为 \texttt{active}\,/\,cells mask (80 位)
+\/\,B (9 位) \/\,S (9 位) \/\,priority (4 位),共 103 位;
+16 slot 共 1648 位。本图为 paper 重新生成的 ASCII 风格结构图,
+\textbf{不依赖装饰性 TikZ}。}
+\label{fig:chrom}
+\end{figure}
+
+如 \ref{fig:chrom} 所示,1648 位的染色体可视为一张 ``一维可寻址表'',
+每个 slot 独立贡献一族语义;ES 的变异算子可针对任意 slot 内任意位
+(在家族模板与 distance mask 共同约束下) 翻转。

@@ -1,0 +1,45 @@
+% 02-related.tex — 相关工作
+
+\section{相关工作}
+\label{sec:related}
+
+\subsection{CA 与迷宫生成}
+
+Conway 1970 在生命游戏中观察到 ``滑翔机'' 与 ``滑翔机枪'' 类局部结构,并指出生命游戏可作为
+研究 ``自组织与涌现'' 的最小系统 \cite{conway1970};但 Conway 本身没有把 B3/S23 与迷宫生成
+做直接对应。Wolfram 2002 在其专著中系统分类了基本 CA 在多初始下的终态,其中若干 (尤其 Rule 30、
+Rule 110、Rule 184) 的终态图呈现出类迷宫的几何 (走廊、死端、分叉都有),但选择 ``哪条规则
+生成的是迷宫'' 仍依赖人眼,作者承认没有给出形式化的判定准则 \cite{wolfram2002}。
+Mitchell 等 1993 用遗传算法在 CA 密度分类问题上进行搜索,展示了 ``计算涌现'' 在简单规则空间
+中的可行性 \cite{mitchell1993},其目标函数 (密度分类准确率) 与本文 ``迷宫质量'' 目标有结构
+上的相似性,但搜索结果并非几何上可读的迷宫。
+
+\subsection{迷宫质量度量}
+
+Bellot 2021 提出基于路径计数与回路比例的 $F$ 度量 \cite{bellot2021},被 MazeBench 等用作多生成器
+对比基准,该度量对 DFS、Kruskal、Prim 等经典算法输出稳定;但对 ``单一贯穿长路径'' 类的几何
+反例 (Spiral、Concentric Rings、Diagonal Stripes) 给出错误的 ``比真迷宫更优'' 评分,这正是本文
+15-pattern 对照基准收集的一类核心反例。
+Pech 2002 建议在生成器侧用 ``唯一长路径'' 强制单连通迷宫 \cite{pech2002},Rejbrand 2017
+讨论 ``最长路径 / 顶点数'' 在螺旋反例上的失效,提出 ``延长路径必须分支'' 的修正约束 \cite{rejbrand2017};
+二者均面向 ``生成器侧干预'',对 ``已经演化出来的 CA 终态图'' 无判定能力。
+McClendon 2001 给出迷宫复杂度的 $\gamma(h)$、$\gamma(M)$、$\delta(M)$ 三个微分度量
+\cite{mcclendon2001},被 Bellot 2021 拼接到 $F$ 中,但同样无法解决 ``单路径贯通型反例误判''。
+本文 $maze\_quality$ 用五维拓扑 + 三维多样性的 $\min$-聚合替代 $F$ 的单一 ``最长路径占比'' 维度,
+从而在所有 9 个伪迷宫反例上得分 $0.000$,0 个误判。
+
+\subsection{多族 CA}
+
+多族规则系统在周期边界 CA (Margolus 1984) 与神经 CA \cite{mordvintsev2020} 中各有实践。
+Margolus 块变换使用 ``块级'' 规则族但族是预定义且不参与搜索;神经 CA 的 ``多通道'' 是同一族
+的不同 ``颜色'',亦不作为独立基因位。
+本文 FamilyMask 把族数、邻域、优先级一并编码为染色体,使 ``族'' 成为可被 ES 增删的离散
+结构,这一点与上述工作均不同。
+
+\subsection{浏览器内 ES 与 WebGPU}
+
+Chromium 自 2023 年起原生支持 WebGPU compute shader,使浏览器内可部署大批量 CA 评估
+\cite{webgpu2023}。Skiena 2024 在 Codeforces 评测系统中引入 WebGPU 后端 \cite{skiena2024},
+本文沿用同一思路,但把 workload 集中在单核 fitness 评估 (CA 演化),人口规模 200、迭代 500 代,
+单次 run 在 $40\!\times\! 60$ 网格、300 步演化下可在 $\sim\! 4$ 分钟完成,
+保证 122 次 sweep 可在 12.5 小时墙钟内完成。

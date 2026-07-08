@@ -1,0 +1,27 @@
+% 07-conclusion.tex — 结论
+
+\section{结论}
+\label{sec:conclusion}
+
+本文给出 FamilyMask 多族 CA 编码与 maze\_quality 八维几何质量度量两条主线。
+FamilyMask 把经典 B/S 型规则推广为最多 16 族并行、按优先级仲裁的离散结构,
+使搜索空间从 $2^{18}$ 跃升至 $2^{824}$ 级;maze\_quality 用 8 维连续可微子度量 + 两层
+$\min$-聚合 + 墙比软门控在所有 9 个伪迷宫反例上得分 $0$,
+在 6 个真迷宫生成器上均值 $0.711$,间隔 $+0.711$,无误判;
+对同一数据集,Bellot 2021 $F = \nu/\delta$ 真伪间隔 $-191.3$,且 4/9 伪迷宫
+(Spiral + Horizontal Stripes + Concentric Rings + Honeycomb) 排名反低于
+真迷宫最低值 Recursive Backtrack ($F = 15.33$),即参考 (mazeweb-128-sweep-and-active.md)
+早就指出的 smoking gun。
+二者在 122 次 WebGPU 加速 $(\mu{+}\lambda)$ ES sweep 上协同得出 $0.8233$ 的全场最高
+分 (manhattan-2 / mf=8 / 种子 444),并从失败样本中清晰分离出 ``搜索空间过大''
+(chebyshev-4, $0.157$) 与 ``邻域信息不足'' (manhattan-1, $0.420$) 两类机制
+截然不同的病态。
+
+本文结果再次确认了 Bellot 2021 $F$ 度量在 ``单路径贯通型'' 反例上的方向误判,
+并指出几何反例的描述需要在 ``最长路径占比'' 之外再增加 ``分叉比例'' 与
+``墙分布熵'' 两类信号;同时,本文提醒:CA 编码空间的扩展
+(\emph{升维} vs \emph{升容}) 不等于搜索质量的单调提升
+—— 多族容量上限升高反而拖累均值,但保留了 mf=8 那一档 ``偶发突破'' 的尾部峰值。
+
+所有代码 (maze-web 浏览器端 ES + GPU compute shader + 15-pattern 测试集)、数据
+(sweep ndjson, 122 ok + 6 timeout)、截图 (figures/v2/) 均开源。

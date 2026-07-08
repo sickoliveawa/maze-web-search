@@ -1,0 +1,1152 @@
+{
+  "total_runs": 128,
+  "ok_runs": 122,
+  "timeout_runs": 6,
+  "pop": 200,
+  "gens": 500,
+  "gridW": 40,
+  "gridH": 60,
+  "wall_sec_total_ok": 45114,
+  "runs": [
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 2,
+      "seed": 222,
+      "best": 0.77762
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.727934
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.789189
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.779575
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.777896
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.777893
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.784902
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.758224
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.766777
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.809539
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 1,
+      "seed": 111,
+      "best": 0.7733
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 1,
+      "seed": 222,
+      "best": 0.773255
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 1,
+      "seed": 333,
+      "best": 0.751356
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 1,
+      "seed": 444,
+      "best": 0.776128
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 2,
+      "seed": 111,
+      "best": 0.77484
+    },
+    {
+      "mask": "chebyshev-1",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.763381
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 1,
+      "seed": 111,
+      "best": 0.780801
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 1,
+      "seed": 222,
+      "best": 0.777248
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 1,
+      "seed": 333,
+      "best": 0.787591
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 1,
+      "seed": 444,
+      "best": 0.796454
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 2,
+      "seed": 111,
+      "best": 0.728309
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 2,
+      "seed": 222,
+      "best": 0.777038
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.807951
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.79818
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.776513
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.781723
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.712428
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.711639
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.590856
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 1,
+      "seed": 111,
+      "best": 0.748661
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 1,
+      "seed": 222,
+      "best": 0.793002
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 1,
+      "seed": 333,
+      "best": 0.762738
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 1,
+      "seed": 444,
+      "best": 0.777149
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 2,
+      "seed": 111,
+      "best": 0.785612
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 2,
+      "seed": 222,
+      "best": 0.785229
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.790772
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.759393
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.765529
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.775199
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.781969
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.795545
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.787932
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.78304
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.786648
+    },
+    {
+      "mask": "chebyshev-3",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.744562
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 1,
+      "seed": 111,
+      "best": 0.424414
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 1,
+      "seed": 222,
+      "best": 0.163254
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 1,
+      "seed": 333,
+      "best": 0.129132
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 1,
+      "seed": 444,
+      "best": 0.148349
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 2,
+      "seed": 111,
+      "best": 0.140091
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 2,
+      "seed": 222,
+      "best": 0.190278
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.132703
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.153344
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.109649
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.125341
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.119752
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.16491
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.174679
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.126877
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.103837
+    },
+    {
+      "mask": "chebyshev-4",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.109678
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.427774
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.424043
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.436008
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.419839
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.417374
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.423443
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.427509
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.415886
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.413685
+    },
+    {
+      "mask": "manhattan-1",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.399754
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 1,
+      "seed": 111,
+      "best": 0.77618
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 1,
+      "seed": 222,
+      "best": 0.774906
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 1,
+      "seed": 333,
+      "best": 0.774271
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 1,
+      "seed": 444,
+      "best": 0.776842
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 2,
+      "seed": 111,
+      "best": 0.781091
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 2,
+      "seed": 222,
+      "best": 0.78019
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.776498
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.776781
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.795674
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.780986
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.778099
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.805937
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.746012
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.742941
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.753184
+    },
+    {
+      "mask": "manhattan-2",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.823277
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 1,
+      "seed": 111,
+      "best": 0.778799
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 1,
+      "seed": 222,
+      "best": 0.792394
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 1,
+      "seed": 333,
+      "best": 0.778309
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 1,
+      "seed": 444,
+      "best": 0.781292
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 2,
+      "seed": 111,
+      "best": 0.78762
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 2,
+      "seed": 222,
+      "best": 0.792566
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.770404
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.793183
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.75935
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.761416
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.776999
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.781361
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.761026
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.701388
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.776916
+    },
+    {
+      "mask": "manhattan-3",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.749478
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 1,
+      "seed": 111,
+      "best": 0.799877
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 1,
+      "seed": 222,
+      "best": 0.777417
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 1,
+      "seed": 333,
+      "best": 0.787713
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 1,
+      "seed": 444,
+      "best": 0.793564
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 2,
+      "seed": 111,
+      "best": 0.768078
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 2,
+      "seed": 222,
+      "best": 0.768578
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 2,
+      "seed": 333,
+      "best": 0.753377
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 2,
+      "seed": 444,
+      "best": 0.745947
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 4,
+      "seed": 111,
+      "best": 0.767145
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 4,
+      "seed": 222,
+      "best": 0.784118
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 4,
+      "seed": 333,
+      "best": 0.797648
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.445186
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.79657
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.753374
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 8,
+      "seed": 333,
+      "best": 0.738454
+    },
+    {
+      "mask": "manhattan-4",
+      "maxFam": 8,
+      "seed": 444,
+      "best": 0.750721
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 4,
+      "seed": 444,
+      "best": 0.662434
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 8,
+      "seed": 111,
+      "best": 0.772776
+    },
+    {
+      "mask": "chebyshev-2",
+      "maxFam": 8,
+      "seed": 222,
+      "best": 0.638858
+    }
+  ],
+  "top1": {
+    "summary": "",
+    "best": 0.823277,
+    "log_tail": "gen 497: best=0.8233 mean=0.1298 positive=48/200 elapsed=273.6s || gen 498: best=0.8233 mean=0.1462 positive=62/200 elapsed=274.2s || gen 499: best=0.8233 mean=0.1502 positive=57/200 elapsed=274.8s || gen 500: best=0.8233 mean=0.1423 positive=56/200 elapsed=275.3s || ✅ run complete. bestScore=0.823277 || 💾 ckpt saved: sweep_manhattan-2_mf8_s444.json (14656B)",
+    "mask": "manhattan-2",
+    "maxFam": 8,
+    "seed": 444,
+    "pop": 200,
+    "gens": 500,
+    "gridW": 40,
+    "gridH": 60,
+    "wall_sec": 279,
+    "ts": "2026-07-05T21:24:07.613308",
+    "status": "OK"
+  },
+  "mask_mean": {
+    "chebyshev-1": {
+      "mean": 0.7726130625000001,
+      "n": 16,
+      "min": 0.727934,
+      "max": 0.809539
+    },
+    "chebyshev-2": {
+      "mean": 0.7437999375,
+      "n": 16,
+      "min": 0.590856,
+      "max": 0.807951
+    },
+    "chebyshev-3": {
+      "mean": 0.7764362499999999,
+      "n": 16,
+      "min": 0.744562,
+      "max": 0.795545
+    },
+    "chebyshev-4": {
+      "mean": 0.157268,
+      "n": 16,
+      "min": 0.103837,
+      "max": 0.424414
+    },
+    "manhattan-1": {
+      "mean": 0.42053149999999995,
+      "n": 10,
+      "min": 0.399754,
+      "max": 0.436008
+    },
+    "manhattan-2": {
+      "mean": 0.7776793125,
+      "n": 16,
+      "min": 0.742941,
+      "max": 0.823277
+    },
+    "manhattan-3": {
+      "mean": 0.7714063125,
+      "n": 16,
+      "min": 0.701388,
+      "max": 0.793183
+    },
+    "manhattan-4": {
+      "mean": 0.7517354375,
+      "n": 16,
+      "min": 0.445186,
+      "max": 0.799877
+    }
+  },
+  "mf_mean": {
+    "2": {
+      "mean": 0.6688204333333334,
+      "n": 30,
+      "min": 0.132703,
+      "max": 0.807951
+    },
+    "4": {
+      "mean": 0.63818253125,
+      "n": 32,
+      "min": 0.109649,
+      "max": 0.805937
+    },
+    "8": {
+      "mean": 0.6306086875,
+      "n": 32,
+      "min": 0.103837,
+      "max": 0.823277
+    },
+    "1": {
+      "mean": 0.6983712857142857,
+      "n": 28,
+      "min": 0.129132,
+      "max": 0.799877
+    }
+  },
+  "seed_mean": {
+    "222": {
+      "mean": 0.6619544666666666,
+      "n": 30
+    },
+    "333": {
+      "mean": 0.6520834516129033,
+      "n": 31
+    },
+    "444": {
+      "mean": 0.6414600967741935,
+      "n": 31
+    },
+    "111": {
+      "mean": 0.6753948,
+      "n": 30
+    }
+  },
+  "crosstab_mask_mf": {
+    "chebyshev-1__2": {
+      "mean": 0.7673957499999999,
+      "n": 4
+    },
+    "chebyshev-1__4": {
+      "mean": 0.7800665,
+      "n": 4
+    },
+    "chebyshev-1__8": {
+      "mean": 0.77448025,
+      "n": 4
+    },
+    "chebyshev-1__1": {
+      "mean": 0.76850975,
+      "n": 4
+    },
+    "chebyshev-2__1": {
+      "mean": 0.7855235,
+      "n": 4
+    },
+    "chebyshev-2__2": {
+      "mean": 0.7778695,
+      "n": 4
+    },
+    "chebyshev-2__4": {
+      "mean": 0.7332744999999999,
+      "n": 4
+    },
+    "chebyshev-2__8": {
+      "mean": 0.6785322500000001,
+      "n": 4
+    },
+    "chebyshev-3__1": {
+      "mean": 0.7703875,
+      "n": 4
+    },
+    "chebyshev-3__2": {
+      "mean": 0.7802515,
+      "n": 4
+    },
+    "chebyshev-3__4": {
+      "mean": 0.7795605,
+      "n": 4
+    },
+    "chebyshev-3__8": {
+      "mean": 0.7755455,
+      "n": 4
+    },
+    "chebyshev-4__1": {
+      "mean": 0.21628725000000001,
+      "n": 4
+    },
+    "chebyshev-4__2": {
+      "mean": 0.154104,
+      "n": 4
+    },
+    "chebyshev-4__4": {
+      "mean": 0.129913,
+      "n": 4
+    },
+    "chebyshev-4__8": {
+      "mean": 0.12876775,
+      "n": 4
+    },
+    "manhattan-1__2": {
+      "mean": 0.4259085,
+      "n": 2
+    },
+    "manhattan-1__4": {
+      "mean": 0.42416600000000004,
+      "n": 4
+    },
+    "manhattan-1__8": {
+      "mean": 0.4142085,
+      "n": 4
+    },
+    "manhattan-2__1": {
+      "mean": 0.77554975,
+      "n": 4
+    },
+    "manhattan-2__2": {
+      "mean": 0.77864,
+      "n": 4
+    },
+    "manhattan-2__4": {
+      "mean": 0.7901739999999999,
+      "n": 4
+    },
+    "manhattan-2__8": {
+      "mean": 0.7663535,
+      "n": 4
+    },
+    "manhattan-3__1": {
+      "mean": 0.7826985,
+      "n": 4
+    },
+    "manhattan-3__2": {
+      "mean": 0.78594325,
+      "n": 4
+    },
+    "manhattan-3__4": {
+      "mean": 0.7697815,
+      "n": 4
+    },
+    "manhattan-3__8": {
+      "mean": 0.747202,
+      "n": 4
+    },
+    "manhattan-4__1": {
+      "mean": 0.7896427500000001,
+      "n": 4
+    },
+    "manhattan-4__2": {
+      "mean": 0.758995,
+      "n": 4
+    },
+    "manhattan-4__4": {
+      "mean": 0.69852425,
+      "n": 4
+    },
+    "manhattan-4__8": {
+      "mean": 0.75977975,
+      "n": 4
+    }
+  },
+  "15pattern": {
+    "true_count": 6,
+    "pseudo_count": 9,
+    "true_mean": 0.711,
+    "pseudo_mean": 0.0,
+    "gap": 0.711,
+    "bellot_true_mean": 100.882,
+    "bellot_pseudo_mean": 292.205,
+    "bellot_gap": -191.323,
+    "bellot_formula": "$F(M) = \\nu(M) / \\delta(M)$ with $\\delta$ via twistiness (Bellot 2021 §3.4)",
+    "bellot_source": "src/gpu/bellot_metrics.js::bellotF",
+    "misclass_mq": "0/9 (maze_quality阈值 = 0.5)",
+    "misclass_bellot": "2/9 pseudo (Spiral F=11.85 vs DFS F=15.33 — Bellot F underrates DFS)",
+    "misclass_bellot_pseudo_low_F": [
+      {
+        "name": "Spiral",
+        "F": 11.849,
+        "note": "Spiral低于所有真迷宫最低值 (15.331), 被误判\"比DFS更像迷宫\""
+      },
+      {
+        "name": "Horizontal Stripes",
+        "F": 0.0,
+        "note": "F=0 被 Bellot F 判为\"最像迷宫\""
+      },
+      {
+        "name": "Concentric Rings",
+        "F": 0.0,
+        "note": "F=0 被 Bellot F 判为\"最像迷宫\""
+      },
+      {
+        "name": "Honeycomb",
+        "F": 0.0,
+        "note": "F=0 被 Bellot F 判为\"最像迷宫\""
+      }
+    ],
+    "per_pattern": [
+      {
+        "name": "Kruskal",
+        "type": "TRUE",
+        "mq": 0.737,
+        "wall_ratio": 0.53,
+        "nu_count": 244.0,
+        "twistiness": 2.33,
+        "bellotF": 104.874
+      },
+      {
+        "name": "Prim",
+        "type": "TRUE",
+        "mq": 0.719,
+        "wall_ratio": 0.53,
+        "nu_count": 250.0,
+        "twistiness": 2.42,
+        "bellotF": 103.398
+      },
+      {
+        "name": "Growing Tree",
+        "type": "TRUE",
+        "mq": 0.719,
+        "wall_ratio": 0.53,
+        "nu_count": 276.0,
+        "twistiness": 1.46,
+        "bellotF": 189.063
+      },
+      {
+        "name": "Sidewinder",
+        "type": "TRUE",
+        "mq": 0.711,
+        "wall_ratio": 0.53,
+        "nu_count": 228.0,
+        "twistiness": 2.97,
+        "bellotF": 76.89
+      },
+      {
+        "name": "Recursive Backtrack",
+        "type": "TRUE",
+        "mq": 0.707,
+        "wall_ratio": 0.53,
+        "nu_count": 114.0,
+        "twistiness": 7.44,
+        "bellotF": 15.331
+      },
+      {
+        "name": "Binary Tree",
+        "type": "TRUE",
+        "mq": 0.672,
+        "wall_ratio": 0.53,
+        "nu_count": 264.0,
+        "twistiness": 2.28,
+        "bellotF": 115.739
+      },
+      {
+        "name": "Horizontal Stripes",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.48,
+        "nu_count": 0.0,
+        "twistiness": 0.71,
+        "bellotF": 0.0
+      },
+      {
+        "name": "Concentric Rings",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.43,
+        "nu_count": 0.0,
+        "twistiness": 1.37,
+        "bellotF": 0.0
+      },
+      {
+        "name": "Honeycomb",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.58,
+        "nu_count": 0.0,
+        "twistiness": 0.05,
+        "bellotF": 0.0
+      },
+      {
+        "name": "Spiral",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.57,
+        "nu_count": 10.0,
+        "twistiness": 0.84,
+        "bellotF": 11.849
+      },
+      {
+        "name": "Fractal Tree",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.98,
+        "nu_count": 20.0,
+        "twistiness": 0.0,
+        "bellotF": 40.0
+      },
+      {
+        "name": "Random Noise 50%",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.5,
+        "nu_count": 226.0,
+        "twistiness": 0.07,
+        "bellotF": 452.0
+      },
+      {
+        "name": "Random Noise 30%",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.68,
+        "nu_count": 262.0,
+        "twistiness": 0.07,
+        "bellotF": 524.0
+      },
+      {
+        "name": "Diagonal Stripes",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.67,
+        "nu_count": 321.0,
+        "twistiness": 0.0,
+        "bellotF": 642.0
+      },
+      {
+        "name": "Checkerboard",
+        "type": "PSEUDO",
+        "mq": 0.0,
+        "wall_ratio": 0.5,
+        "nu_count": 480.0,
+        "twistiness": 0.0,
+        "bellotF": 960.0
+      }
+    ]
+  }
+}

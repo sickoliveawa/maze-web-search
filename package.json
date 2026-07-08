@@ -1,0 +1,14 @@
+{
+  "name": "maze-web",
+  "version": "0.1.0",
+  "description": "Browser-based dashboard for ES-driven CA maze rule search. WebGPU compute shaders, IndexedDB persistence.",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "serve": "python -m http.server 8080",
+    "serve:node": "node serve.js"
+  },
+  "keywords": ["cellular-automata", "maze-generation", "rule-search", "ES", "WebGPU"],
+  "author": "doro (for sko)",
+  "license": "MIT"
+}

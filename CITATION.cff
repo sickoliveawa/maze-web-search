@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: |
+  If you use this software or the accompanying paper, please cite both the
+  software and the paper. The paper is the primary citation; the software
+  release is for reproducibility.
+type: software
+title: maze-web
+abstract: |
+  Browser-based dashboard for FamilyMask (multi-family cellular automaton rule
+  encoding) and maze_quality (8-dimensional maze quality metric), with
+  WebGPU-accelerated evolution-strategy training. Includes a 128-run sweep
+  harness, a 15-pattern benchmark, and the LaTeX source for the accompanying
+  paper.
+authors:
+  - family-names: Feng
+    given-names: Zhuoyuan
+    alias: sko
+    affiliation: University of Chinese Academy of Sciences
+keywords:
+  - cellular-automata
+  - mazes
+  - evolution-strategies
+  - webgpu
+  - gpu-compute
+  - family-mask
+license: MIT
+repository-code: https://github.com/sko/maze-web

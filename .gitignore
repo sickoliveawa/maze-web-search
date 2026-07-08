@@ -1,0 +1,152 @@
+# ============================================================
+# maze-web .gitignore
+# ============================================================
+# Tracks: src/, paper/, scripts/, README/LICENSE
+# Ignores: scratch/diag files, LaTeX build output, ckpts, IDE noise
+
+# ------------------------------------------------------------
+# 1. Sweep / training output (binary, regenerable, large)
+# ------------------------------------------------------------
+# Training checkpoints (regenerable from src)
+ckpt/
+ckpt_*/
+
+# Sweep runs (results + logs)
+sweep_*/
+!sweep_*/README.md
+!sweep_*/aggregate.py
+
+# Big sweep specifically (currently running; ignore its runtime logs)
+sweep_2026_07_08_big/
+
+# Mini-sweep data (small NDJSON; keep README only)
+mini_sweep_*/
+!mini_sweep_*/README.md
+
+# Empty placeholder dirs
+figures/         # reserved for paper figures
+paper_figs/      # legacy paper figures
+paper_preview/   # legacy paper previews
+figures/v2/      # v2 paper fig rendering scratch (kept locally only)
+
+# Paper audit / verify / build pipeline (intermediate)
+# KEEP only: sweep_summary.json (paper headline data) + .md audit files
+paper/data/_*.py
+paper/data/_*.py.bak_*
+paper/data/_*.mjs
+paper/data/_*.json
+!paper/data/sweep_summary.json
+!paper/data/_audit_*.md
+!paper/data/_fig_*.md
+!paper/data/_replay_*.md
+paper/data/__pycache__/
+paper/data/_compare_init/
+paper/data/_diag_panels/
+paper/data/_grids/
+
+# Paper figures: only fig_* (named paper figures) tracked
+paper/figures/_*
+paper/figures/fig_*_legacy.*
+
+# ------------------------------------------------------------
+# 2. Pre-publication backup / scratch dirs
+# ------------------------------------------------------------
+# Backs up everything we deleted before git init
+_before_git_init_*/
+_before_*/
+
+# Backup files (any extension containing .bak. or .bak_)
+*.bak.*
+*.bak_*
+*.bak
+!*/.gitkeep
+
+# ------------------------------------------------------------
+# 3. LaTeX build output (regenerable via pdflatex)
+# ------------------------------------------------------------
+# Top-level
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+
+# paper/ subdir build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.synctex.gz
+paper/main_v1.0_backup.pdf
+paper/main_v1.1.tex
+paper/main_v1.1_with_repro_section.pdf
+
+# ------------------------------------------------------------
+# 4. Python / Node build artifacts
+# ------------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+node_modules/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+
+# ------------------------------------------------------------
+# 5. Editor / IDE / OS noise
+# ------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local env / secrets
+.env
+.env.local
+*.local
+secrets.yaml
+*.key
+*.pem
+
+# ------------------------------------------------------------
+# 6. Diagnostic / one-off scratch (NEVER commit, even with prefix)
+# ------------------------------------------------------------
+# Convention: ALL diagnostic scripts and screenshots are git-ignored.
+# The few we want to KEEP are renamed to drop the leading underscore.
+# (See _*.py, _*.png still present — they survive for reference, but if
+#  not referenced from any .md / .tex, delete them.)
+_*.py.tmp
+_*.png.tmp
+
+# ------------------------------------------------------------
+# 7. Browser / dev-mode cache
+# ------------------------------------------------------------
+.browserslist
+.babel-cache
+.parcel-cache/
+.vite/
+dist/
+build/
+
+# ------------------------------------------------------------
+# 8. Logs
+# ------------------------------------------------------------
+*.log
+!paper/sections/*.log
+!ckpt_server.py    # keep this here as a comment for clarity — it's not a log
+
+# ------------------------------------------------------------
+# 9. Output dirs that are runtime-only
+# ------------------------------------------------------------
+tmp/
+out/
+output/

@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>maze-web — ES-driven CA maze search</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='14' font-size='14'%3E🌀%3C/text%3E%3C/svg%3E">
+
+<style>
+  /* ───── design tokens ───── */
+  :root {
+    /* ✅ FIX (sko 07-01): 浅色 light theme — 跟 maze canvas 协调 (深墙+白路) */
+    --bg-0: #f5f4ee;          /* 主页背景 — 米色 paper */
+    --bg-1: #ebe9e0;          /* 顶栏 / tab bar — 略深 */
+    --bg-2: #ffffff;          /* 面板 — 纯白, 跟深色 maze 对比 */
+    --bg-3: #f0eee5;          /* 表单底 / 卡片 — 略深于 paper */
+    --bg-4: #e0ded2;          /* 高亮底 (active) */
+    --border: #d0cec4;        /* 浅灰边 */
+    --border-strong: #a8a69c; /* 中灰边 (强) */
+    --fg-0: #1a1818;          /* 文字主 — 深炭 */
+    --fg-1: #5a5650;          /* 文字次 — 中 */
+    --fg-2: #8a8680;          /* 文字灰 — 浅 */
+    --accent: #3a8acb;        /* 强调蓝 (浅背景更深) */
+    --accent-2: #3a9c5a;      /* 强调绿 (浅背景更深) */
+    --warn: #c47628;
+    --bad: #c43a3a;
+    /* 浅色 shadow (subtle, 不抢眼) */
+    --shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg-0); color: var(--fg-0);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13.5px; line-height: 1.5;
+  }
+  h1, h2, h3, h4 { margin: 0 0 0.4em 0; font-weight: 600; }
+  h1 { font-size: 18px; letter-spacing: 0.5px; }
+  h2 { font-size: 14px; text-transform: uppercase; color: var(--fg-2); letter-spacing: 1px; margin-top: 16px; }
+  h3 { font-size: 12.5px; color: var(--fg-1); margin-top: 10px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  small { color: var(--fg-2); font-size: 11.5px; }
+
+  /* ───── top bar ───── */
+  header.topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; background: var(--bg-1); border-bottom: 1px solid var(--border);
+  }
+  header.topbar .brand { display: flex; align-items: center; gap: 10px; }
+  header.topbar .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  header.topbar .meta { color: var(--fg-1); font-size: 12px; }
+  header.topbar .meta .gpu { color: var(--accent-2); }
+
+  /* ───── tab bar ───── */
+  nav.tabs {
+    display: flex; gap: 2px; padding: 0 18px; background: var(--bg-1);
+    border-bottom: 1px solid var(--border);
+  }
+  nav.tabs button {
+    padding: 9px 18px; background: transparent; color: var(--fg-1);
+    border: none; cursor: pointer; border-bottom: 2px solid transparent;
+    font: inherit; font-weight: 500;
+  }
+  nav.tabs button:hover { color: var(--fg-0); }
+  nav.tabs button.active {
+    color: var(--fg-0); border-bottom-color: var(--accent);
+  }
+
+  /* ───── main + sections ───── */
+  main { padding: 18px; max-width: 1400px; margin: 0 auto; }
+  .panel {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .panel > h2:first-child { margin-top: 0; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 4px 0; }
+  .row > * { flex: 0 0 auto; }
+  .row.grow > * { flex: 1 1 auto; min-width: 0; }
+
+  .col2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .col3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 800px) {
+    .col2, .col3 { grid-template-columns: 1fr; }
+  }
+
+  /* ───── form controls ───── */
+  label.field {
+    display: flex; flex-direction: column; font-size: 11.5px;
+    color: var(--fg-1); margin-bottom: 6px; min-width: 110px;
+  }
+  label.field > .ctrl {
+    margin-top: 3px;
+  }
+  /* Hover-aware field labels */
+  label.field-help { cursor: help; }
+  label.field-help:hover { color: var(--fg-0); }
+  /* Active family slot also needs help cursor */
+  .fam-slot[data-tip] { cursor: help; }
+  input[type="number"], input[type="text"], select, textarea {
+    background: var(--bg-3); border: 1px solid var(--border);
+    color: var(--fg-0); border-radius: 4px; padding: 5px 7px;
+    font: inherit;
+  }
+  input[type="number"] { width: 86px; }
+  input[type="text"] { width: 130px; }
+  input[type="checkbox"] {
+    accent-color: var(--accent); vertical-align: middle;
+  }
+  input[type="range"] { vertical-align: middle; accent-color: var(--accent); }
+  input:focus, select:focus, textarea:focus { outline: 1px solid var(--accent); }
+
+  /* ───── buttons ───── */
+  button.btn, button.primary, button.danger, button.ghost {
+    background: var(--bg-3); border: 1px solid var(--border-strong);
+    color: var(--fg-0); border-radius: 4px; padding: 6px 12px;
+    cursor: pointer; font: inherit; font-weight: 500;
+  }
+  button.primary {
+    background: var(--accent); color: var(--bg-0); border-color: transparent;
+  }
+  button.primary:hover { background: #80d4ff; }
+  button.danger {
+    background: var(--bad); color: var(--bg-0); border-color: transparent;
+  }
+  button.ghost {
+    background: transparent; color: var(--fg-1); border-color: var(--border);
+  }
+  button.ghost:hover { color: var(--fg-0); border-color: var(--border-strong); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ───── status pills / progress ───── */
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.5px;
+    background: var(--bg-3); border: 1px solid var(--border); color: var(--fg-1);
+  }
+  .pill.live { background: var(--accent); color: var(--bg-0); border-color: transparent; }
+  .pill.warn { background: var(--warn); color: var(--bg-0); border-color: transparent; }
+  .pill.bad { background: var(--bad); color: var(--bg-0); border-color: transparent; }
+  .pill.ok { background: var(--accent-2); color: var(--bg-0); border-color: transparent; }
+  .progress {
+    height: 6px; background: var(--bg-3); border-radius: 3px; overflow: hidden;
+  }
+  .progress > .bar {
+    height: 100%; background: var(--accent); width: 0%; transition: width 0.2s ease;
+  }
+
+  /* ───── tables ───── */
+  table {
+    width: 100%; border-collapse: collapse; font-size: 12.5px;
+  }
+  thead th {
+    text-align: left; color: var(--fg-2); font-weight: 500;
+    text-transform: uppercase; font-size: 10.5px; letter-spacing: 1px;
+    padding: 6px 8px; border-bottom: 1px solid var(--border-strong);
+  }
+  tbody td {
+    padding: 6px 8px; border-bottom: 1px solid var(--border);
+  }
+  tbody tr:hover { background: var(--bg-3); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; }
+
+  /* ───── canvas wrapper + image grid ───── */
+  .canvas-wrap {
+    display: inline-block; background: var(--bg-0); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px; line-height: 0;
+  }
+  .canvas-wrap img, .canvas-wrap canvas { display: block; image-rendering: pixelated; }
+
+  /* ───── ckpt grid (Preview tab) ───── */
+  .ckpt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-0);
+  }
+  .ckpt-card {
+    position: relative;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s, border-color 0.1s, transform 0.1s;
+    background: var(--bg-1);
+  }
+  .ckpt-card:hover {
+    background: var(--bg-2);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .ckpt-card.active {
+    background: var(--bg-3);
+    border-color: var(--accent);
+    border-left: 3px solid var(--accent);
+    padding-left: 7px;
+  }
+  .ckpt-card-name {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fg-0);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ckpt-card-score {
+    font-size: 16px;
+    color: var(--accent-2);
+    font-weight: 700;
+    line-height: 1.1;
+    font-family: ui-monospace, Consolas, monospace;
+  }
+  .ckpt-card-meta {
+    font-size: 10.5px;
+    color: var(--muted);
+    font-family: ui-monospace, Consolas, monospace;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+  .ckpt-card-del {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 12px;
+    line-height: 1;
+    opacity: 0.5;
+  }
+  .ckpt-card:hover .ckpt-card-del { opacity: 1; }
+  .ckpt-card-del:hover { color: var(--bad); opacity: 1; }
+
+  /* ───── breakdown bars ───── */
+  .bar-row { display: flex; align-items: center; gap: 8px; margin: 2px 0; font-size: 11.5px; }
+  .bar-row .name { width: 110px; color: var(--fg-1); }
+  .bar-row .track {
+    flex: 1; height: 8px; background: var(--bg-3); border-radius: 4px; overflow: hidden;
+  }
+  .bar-row .track > .fill {
+    height: 100%; background: var(--accent-2); width: 0%;
+  }
+  .bar-row .val { width: 56px; text-align: right; font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+
+  /* ───── help text ───── */
+  .help { color: var(--fg-2); font-size: 11.5px; margin: 2px 0; }
+
+  /* ───── hidden section ───── */
+  section.tab-panel { display: none; }
+  section.tab-panel.active { display: block; }
+
+  /* ───── log pane (right side) ───── */
+  .log {
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 4px;
+    padding: 8px; height: 220px; overflow: auto; font-family: ui-monospace, Menlo, monospace;
+    font-size: 11px; line-height: 1.4; color: var(--fg-1);
+  }
+  .log .gen-info { color: var(--accent); }
+  .log .gen-warn { color: var(--warn); }
+
+  /* ───── section card for grouping Configure fields ───── */
+  .cfg-card {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; margin-bottom: 12px;
+  }
+  .cfg-card h3 { margin: 0 0 8px; color: var(--accent); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 1px; }
+  .cfg-card .desc { color: var(--fg-2); font-size: 11px; margin: 0 0 10px; }
+
+  /* family slot grid */
+  .fam-slots { display: flex; flex-wrap: wrap; gap: 4px; max-width: 250px; }
+  .fam-slot {
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-strong); border-radius: 4px;
+    background: var(--bg-3); color: var(--fg-1); font-size: 11px; cursor: pointer;
+    font-family: ui-monospace, Menlo, monospace; user-select: none;
+  }
+  .fam-slot.active {
+    background: var(--accent); color: var(--bg-0); border-color: transparent; font-weight: 600;
+  }
+  .fam-slot.disabled { opacity: 0.25; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="dot"></div>
+    <h1>maze-web</h1>
+    <span class="meta" id="gpu-status">checking WebGPU…</span>
+  </div>
+  <div class="meta">
+    <span class="pill ok" id="sota-pill">M4 SOTA 0.7638</span>
+    <span class="pill" id="tab-pill">Configure</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button data-tab="configure" class="active">Configure</button>
+  <button data-tab="train">Train</button>
+  <button data-tab="best">Best</button>
+  <button data-tab="preview">Preview</button>
+</nav>
+
+<main>
+  <section id="tab-configure" class="tab-panel active"></section>
+  <section id="tab-train" class="tab-panel"></section>
+  <section id="tab-best" class="tab-panel"></section>
+  <section id="tab-preview" class="tab-panel"></section>
+</main>
+
+<script type="module" src="src/dashboard.js"></script>
+
+</body>
+</html>

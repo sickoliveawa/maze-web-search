@@ -1,0 +1,47 @@
+% 01-intro.tex — 引言
+
+\section{引言}
+\label{sec:intro}
+
+元胞自动机 (cellular automata, CA) 能否生成迷宫,这道问题在 Conway 时代就被反复提出。早期工作
+记录了上千条规则的演化轨迹,Conway 1970 在生命游戏中观察到 ``滑翔机'' 与 ``滑翔机枪'' 类的
+局域结构,但选择 ``什么是迷宫'' 始终依赖人眼判断,缺乏可量化的判定准则 \cite{conway1970}。
+Wolfram 2002 在其专著中也注意到若干基本 CA 的终态呈迷宫状,并将其归入 ``第四类'' 吸引子
+的子类 \cite{wolfram2002}。近年,随着神经 CA 与生成式 CA 的兴起
+\cite{mordvintsev2020, palm2022},CA 再次进入程序化内容生成 (PCG) 的研究视野,
+而 ``它生成的图到底像不像迷宫'' 则成了一道绕不开的判别题。
+
+已有的两种判定思路各有局限。其一,Bellot 2021 提出的 $F$ 度量从迷宫图提取连接性、交叉口
+计数与回路比例等特征,与参考真迷宫做加权比较;该度量在多数真迷宫上得分稳定,但在 ``具有单一
+贯穿长路径'' 的几何反例 (螺旋、同心回路、对角条纹) 上,因 ``最长路径占比'' 优势反而给高分,
+方向发生反转 \cite{bellot2021}。其二,Pech 2002 与 Rejbrand 2017 提出在生成阶段直接约束路径
+结构 (强制单连通、强制 T 形分叉比例) \cite{pech2002, rejbrand2017},这类硬约束对生成器
+侵入性强,无法直接移植到没有显式构造步骤的 CA 演化系统。
+
+本文绕开上述两个方向,从两条线分别入手。\textbf{第一条线}是把 B/S 型生命周期规则推广为
+$\textbf{FamilyMask}$ \textbf{多族组合} (见 \ref{sec:familymask}),族之间用优先级仲裁,
+使搜索空间从单条 B/S 字符串 ($2^{18}$ 候选) 跃升到一族 B/S 加一组邻域 mask 的 $2^{103}$
+级别,为更复杂的涌现留出空间。\textbf{第二条线}是提出 $\textbf{maze\_quality}$ \textbf{八维
+几何质量度量} (见 \ref{sec:mazequality}),子度量全部连续可微 (取值 $[0,1]$,ES 可学),两层
+加权几何聚合避免单边 exploit,并用一道墙比软门控拦截 ``实心块'' 与 ``空盒'' 两种典型病态吸引子。
+
+\begin{finding}[FamilyMask + maze\_quality 两条主线的协同]
+对同一 $40\!\times\! 60$ 网格 CA 终态图,$maze\_quality$ 在 15-pattern 数据集上的真假间隔
+$+0.711$;Bellot $F = \nu/\delta$ 的真假间隔为 $-191.3$,且 4 个伪迷宫的 Bellot $F$
+(Spiral 11.85 + Horizontal Stripes/Concentric Rings/Honeycomb 三者均为 0)
+排名反低于真迷宫最低值 Recursive Backtrack ($F = 15.33$),即经典 ``Bellot F
+误判 Spiral 比 DFS 更像迷宫'' smoking gun。将 FamilyMask 接入 $(\mu{+}\lambda)$
+ES 后,搜索 122 次成功,得到 $0.8233$ 全场最高分。
+\end{finding}
+
+把 FamilyMask 与 maze\_quality 联立,放进 WebGPU 加速的 $(\mu{+}\lambda)$ ES,在 122 次成功的
+sweep 上得到 0.8233 的最高分,并从失败样本中分离出两类机制截然不同的病态:
+\textbf{搜索空间过大} (chebyshev-4, 均值 $0.157$) 与 \textbf{邻域信息不足} (manhattan-1,
+均值 $0.420$)。前者来自 $10^5$ 级 ES 预算与 $2^{824}$ 级染色体空间的不可跨越距离,后者来自
+4 邻域本身无法提供走廊结构涌现所需的二阶空间上下文。
+
+本文结构安排如下。\ref{sec:related} 节回顾相关工作;\ref{sec:familymask} 节给出 FamilyMask
+编码与演化语义;\ref{sec:mazequality} 节给出 maze\_quality 的八子度量推导与聚合规则;
+\ref{sec:experiments} 节报告 15-pattern 对照与 122 次 sweep 结果;\ref{sec:discussion} 节讨论
+设计的取舍、``偶发突破'' 现象、浏览器端 ES 优势与局限;\ref{sec:conclusion} 节给出结论;附录给出
+完整公式与软硬件环境。
