@@ -119,7 +119,7 @@ def render_fig(score_key, title, out_path, highlight_low_bellot=False):
         axes[r, c].axis("off")
 
     plt.tight_layout(rect=[0, 0, 1, 0.99])
-    plt.savefig(out_path, dpi=180, bbox_inches="tight", facecolor="#f6f1e6")
+    plt.savefig(out_path, dpi=100, bbox_inches="tight", facecolor="#f6f1e6")
     plt.close()
     print(f"  saved: {out_path} ({out_path.stat().st_size/1024:.1f} KB)")
 

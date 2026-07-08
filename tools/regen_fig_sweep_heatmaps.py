@@ -77,7 +77,7 @@ ax.set_facecolor("#fbf7ed")
 fig.patch.set_facecolor("#f6f1e6")
 plt.tight_layout()
 out1 = OUT_DIR / "fig_bigsweep_top5.png"
-plt.savefig(out1, dpi=180, bbox_inches="tight", facecolor="#f6f1e6")
+plt.savefig(out1, dpi=100, bbox_inches="tight", facecolor="#f6f1e6")
 plt.close()
 print(f"  saved: {out1} ({out1.stat().st_size/1024:.1f} KB)")
 
@@ -145,7 +145,7 @@ ax.set_facecolor("#fbf7ed")
 fig.patch.set_facecolor("#f6f1e6")
 plt.tight_layout()
 out2 = OUT_DIR / "fig_smallsweep_heatmap.png"
-plt.savefig(out2, dpi=180, bbox_inches="tight", facecolor="#f6f1e6")
+plt.savefig(out2, dpi=100, bbox_inches="tight", facecolor="#f6f1e6")
 plt.close()
 print(f"  saved: {out2} ({out2.stat().st_size/1024:.1f} KB)")
 print("done.")

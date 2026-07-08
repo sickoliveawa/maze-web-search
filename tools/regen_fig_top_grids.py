@@ -81,7 +81,7 @@ def render():
         fontsize=11, y=0.995
     )
     plt.tight_layout(rect=[0, 0, 1, 0.97])
-    plt.savefig(OUT, dpi=180, bbox_inches="tight", facecolor=paper_bg)
+    plt.savefig(OUT, dpi=100, bbox_inches="tight", facecolor=paper_bg)
     plt.close()
     print(f"  saved: {OUT} ({OUT.stat().st_size/1024:.1f} KB)")
 
