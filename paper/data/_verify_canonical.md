@@ -58,3 +58,20 @@ _Sources: sweep_2026_07_08_big\results.ndjson, sweep_2026_07_08\results.ndjson, 
 - big_manhattan-2_mf8_s1111.json: bestScore=0.8138289451599121, gen=2000
 - big_manhattan-2_mf8_s2222.json: bestScore=0.7664309740066528, gen=850
 - big_manhattan-2_mf8_s444.json: bestScore=0.8195065855979919, gen=2000
+
+## mf=8 Active Family Distribution (200×500 sweep, n=33 ckpts)
+
+33 个 mf=8 checkpoint 中 active family 分布 (旧 sweep, 来自 fig_mask_fam_heatmap crosstab):
+
+| active families | count | pct  |
+|-----------------|-------|------|
+| 1               | 6     | 18.2% |
+| 2               | 10    | 30.3% |
+| 3               | 11    | 33.3% |
+| 4               | 4     | 12.1% |
+| 5               | 2     | 6.1%  |
+| **≤3**          | **27**| **81.8%** |
+
+- **全场最高分 0.8233 (manhattan-2/mf8/s444) 属于 active=2 bin**
+- active=2 bin 含 10/33 ckpts (30.3%), 是最大分布 bin
+- active≤3: 27/33 = 81.8% ← paper 文中 "81%" 数据来源

@@ -1286,5 +1286,23 @@
     "chromosome_total_bits_16fam": 1648,
     "search_space_per_family": "2^103 (single family); 2^1648 (full 16-family chromosome)",
     "single_family_BS_only": "2^18 (standard B/S string, no mask)"
+  },
+  "mf8_active_family_distribution": {
+    "_label": "mf=8 active family distribution (old 200x500 sweep, n=33 ckpts)",
+    "_source": "fig_mask_fam_heatmap crosstab, 33 mf=8 checkpoints",
+    "distribution": {
+      "active_1": {"count": 6, "pct": 18.2},
+      "active_2": {"count": 10, "pct": 30.3},
+      "active_3": {"count": 11, "pct": 33.3},
+      "active_4": {"count": 4, "pct": 12.1},
+      "active_5": {"count": 2, "pct": 6.1}
+    },
+    "active_le_3": {"count": 27, "pct": 81.8},
+    "top_score_0.8233": {
+      "config": "manhattan-2/mf8/s444",
+      "active_families": 2,
+      "note": "top score belongs to active=2 bin"
+    },
+    "note": "active=2 bin (10/33, 30.3%) is the largest distribution bin"
   }
 }
