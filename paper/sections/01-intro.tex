@@ -3,45 +3,43 @@
 \section{引言}
 \label{sec:intro}
 
-元胞自动机 (cellular automata, CA) 能否生成迷宫,这道问题在 Conway 时代就被反复提出。早期工作
-记录了上千条规则的演化轨迹,Conway 1970 在生命游戏中观察到 ``滑翔机'' 与 ``滑翔机枪'' 类的
-局域结构,但选择 ``什么是迷宫'' 始终依赖人眼判断,缺乏可量化的判定准则 \cite{conway1970}。
-Wolfram 2002 在其专著中也注意到若干基本 CA 的终态呈迷宫状,并将其归入 ``第四类'' 吸引子
-的子类 \cite{wolfram2002}。近年,随着神经 CA 与生成式 CA 的兴起
-\cite{mordvintsev2020, palm2022},CA 再次进入程序化内容生成 (PCG) 的研究视野,
-而 ``它生成的图到底像不像迷宫'' 则成了一道绕不开的判别题。
+\subsection{问题: 元胞自动机生成的是迷宫吗?}
 
-已有的两种判定思路各有局限。其一,Bellot 2021 提出的 $F$ 度量从迷宫图提取连接性、交叉口
-计数与回路比例等特征,与参考真迷宫做加权比较;该度量在多数真迷宫上得分稳定,但在 ``具有单一
-贯穿长路径'' 的几何反例 (螺旋、同心回路、对角条纹) 上,因 ``最长路径占比'' 优势反而给高分,
-方向发生反转 \cite{bellot2021}。其二,Pech 2002 与 Rejbrand 2017 提出在生成阶段直接约束路径
-结构 (强制单连通、强制 T 形分叉比例) \cite{pech2002, rejbrand2017},这类硬约束对生成器
-侵入性强,无法直接移植到没有显式构造步骤的 CA 演化系统。
+元胞自动机 (Cellular Automaton, CA) 是离散动力系统, 用局部更新规则在网格上同步演化。最早被研究的 Conway ``生命游戏'' 是 B/S 字符串规则: 8 邻域下, 活细胞在 $S$ 集合中邻居数时继续存活, 死细胞在 $B$ 集合中邻居数时复活 \cite{conway1970}. 这套规则在二维网格上能产生复杂图样, Wolfram 把它推广为四类动力学 \cite{wolfram2002}: 均匀, 周期, 混沌, 复杂 (生命游戏属于复杂类)。
 
-本文绕开上述两个方向,从两条线分别入手。\textbf{第一条线}是把 B/S 型生命周期规则推广为
-$\textbf{FamilyMask}$ \textbf{多族组合} (见 \ref{sec:familymask}),族之间用优先级仲裁,
-使搜索空间从单条 B/S 字符串 ($2^{18}$ 候选) 跃升到一族 B/S 加一组邻域 mask 的 $2^{103}$
-级别,为更复杂的涌现留出空间。\textbf{第二条线}是提出 $\textbf{maze\_quality}$ \textbf{八维
-几何质量度量} (见 \ref{sec:mazequality}),子度量全部连续可微 (取值 $[0,1]$,ES 可学),两层
-加权几何聚合避免单边 exploit,并用一道墙比软门控拦截 ``实心块'' 与 ``空盒'' 两种典型病态吸引子。
+CA 与迷宫生成在拓扑结构上很接近: 两者都关心二值网格, 都依赖邻域信息, 都讨论 ``局部规则涌现全局结构''。但 CA 的动力学是双向的, 可以把 ``看起来像迷宫的图样'' 视为 CA 的吸引子。这就引出一个具体的判定问题: 给定一个 CA 终态 (二值网格), 怎么判断它是否构成迷宫?
 
-\begin{finding}[FamilyMask + maze\_quality 两条主线的协同]
-对同一 $40\!\times\! 60$ 网格 CA 终态图,$maze\_quality$ 在 15-pattern 数据集上的真假间隔
-$+0.711$;Bellot $F = \nu/\delta$ 的真假间隔为 $-191.3$,且 4 个伪迷宫的 Bellot $F$
-(Spiral 11.85 + Horizontal Stripes/Concentric Rings/Honeycomb 三者均为 0)
-排名反低于真迷宫最低值 Recursive Backtrack ($F = 15.33$),即经典 ``Bellot F
-误判 Spiral 比 DFS 更像迷宫'' smoking gun。将 FamilyMask 接入 $(\mu{+}\lambda)$
-ES 后,搜索 122 次成功,得到 $0.8233$ 全场最高分。
-\end{finding}
+直觉上, 这个问题应该很简单 --- 数一下连通性、看一下走廊就行。但实际上, 至少有四类 CA 吸引子能骗过朴素判别:
+\begin{itemize}[leftmargin=*, itemsep=0pt, topsep=0pt]
+\item \textbf{实心块}. 墙比为 1, 整张图全黑, 拓扑完全退化。
+\item \textbf{空盒}. 墙比为 0, 整张图全白, 同样退化。
+\item \textbf{规则条纹 / 同心环 / 蜂巢}. 高度对称的几何反例, 看上去有结构, 但没有迷宫应有的一格宽走廊。
+\item \textbf{随机噪声}. 50\% 密度的随机点能通过 ``连通性 $\ge$ 阈值'' 的检查, 但分叉过多, 不像迷宫。
+\end{itemize}
 
-把 FamilyMask 与 maze\_quality 联立,放进 WebGPU 加速的 $(\mu{+}\lambda)$ ES,在 122 次成功的
-sweep 上得到 0.8233 的最高分,并从失败样本中分离出两类机制不同的病态:
-\textbf{搜索空间过大} (chebyshev-4, 均值 $0.157$) 与 \textbf{邻域信息不足} (manhattan-1,
-均值 $0.420$)。前者来自 $10^5$ 级 ES 预算与 $2^{103}$ 级单族染色体空间的不可跨越距离,后者来自
-4 邻域本身无法提供走廊结构涌现所需的二阶空间上下文。
+要拒收这些反例, 需要一个同时刻画 ``走廊结构'' 和 ``非平凡拓扑'' 的度量, 还要在伪迷宫上判别失效。
 
-本文结构安排如下。\ref{sec:related} 节回顾相关工作;\ref{sec:familymask} 节给出 FamilyMask
-编码与演化语义;\ref{sec:mazequality} 节给出 maze\_quality 的八子度量推导与聚合规则;
-\ref{sec:experiments} 节报告 15-pattern 对照与 122 次 sweep 结果;\ref{sec:discussion} 节讨论
-设计的取舍、``偶发突破'' 现象、浏览器端 ES 优势与局限;\ref{sec:conclusion} 节给出结论;附录给出
-完整公式与软硬件环境。
+\subsection{已有工作的两个空缺}
+
+迷宫生成算法 (DFS \cite{pech2002}, Kruskal, Prim, Growing Tree, Sidewinder, Binary Tree) 与 CA 演化都能产生二值网格, 但两者之间缺一个统一的 ``是否迷宫'' 判别器。Bellot 等人 2021 年提出的 $F = \nu / \delta$ 度量是当前学界常用的对照基线, 但它对 ``少死端墙 + 长直径'' 的几何反例 (条纹、环、蜂巢) 反而给出高分 \cite{bellot2021}, 方向反了。
+
+CA 规则搜索的现有工作集中在经典 B/S 字符串 ($2^{18}$ 候选), 用遗传编程或 ES 搜索 ``自然涌现迷宫'' 的规则 \cite{rejbrand2017, mcclendon2001}, 但搜索空间太小 (B/S 字符串只能产生有限种动力学), 不可能涌现复杂走廊结构。FamilyMask 编码把搜索空间扩大到 $2^{1648}$, 同时保留 B/S 字符串作为单族退化情形。
+
+\subsection{本文贡献}
+
+本文给出两个互补的产物:
+\begin{enumerate}[leftmargin=*, itemsep=0pt, topsep=0pt]
+  \item \textbf{FamilyMask 多族 CA 染色体。}把经典 B/S 规则推广为最多 16 族并行、按优先级仲裁的染色体。每族独立持有邻域 mask、出生集、存活集与优先级。搜索空间 $2^{103}$ 单族 / $2^{1648}$ 全染色体。
+  \item \textbf{maze\_quality 八维几何度量。}5 拓扑 + 3 多样性子度量, 两层加权几何聚合 + $\min$ 平衡 + 墙比三角门控, 全部连续可微, ES 可学。在 15-pattern 基准上, 真迷宫均值 $0.711$, 伪迷宫均值 $0.000$, 间隔 $+0.711$, 误判 $0/9$。同数据集 Bellot 2021 $F$ 间隔 $-191.3$, 方向反转, 误判 $4/9$。
+  \item \textbf{两个尺度的演化扫描。}小范围 ($40 \times 60$, 122 OK) 给出完整 (mask, maxFam) 消融数据, 最高分 $0.8233$ (manhattan-2 / maxFam=8 / seed 444)。大范围 ($500 \times 2000$, 5/5 OK) 验证 ``同配置, 大网格'' 的 scale-up, 最高分 $0.8195$, 5-run 均值 $0.8020$。两个 sweep 峰值差 $0.0037$, 表明小范围已接近该配置的上界。
+\end{enumerate}
+
+\subsection{全文结构}
+
+§2 介绍相关工作 (CA 与迷宫、FamilyMask 类编码、几何度量、ES 搜索)。
+§3 给出 FamilyMask 染色体的精确描述与执行语义。
+§4 给出 maze\_quality 的 8 个子度量定义与两层聚合, 并在 15-pattern 基准上对比 Bellot 2021 $F$。
+§5 报告两个 sweep 的实验设置、结果与对比。
+§6 讨论两类失败模式 (预算受限 vs 表征受限) 与大网格 scale-up 的含义。
+§7 总结。
+附录 A 给出完整公式; 附录 B 给出数据可用性; 附录 C 给出软硬件环境。
