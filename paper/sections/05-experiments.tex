@@ -84,6 +84,28 @@ manhattan-4    & 16 & 0.7517 & 0.4452 & 0.7999 & healthy (高方差) \\
 
 按 maxFam 分组: mf=1 均值 0.6984 (n=28), mf=2 均值 0.6688 (n=30), mf=4 均值 0.6382 (n=32), mf=8 均值 0.6306 (n=32)。均值随 maxFam 单调下降, 但峰值从 mf=1 的 0.7999 升至 mf=8 的 0.8233 --- ``均值降, 峰值升'' 现象。
 
+\subsection{ES 跑出来的高分迷宫与重点特征分析}
+
+把上述 122 个 OK run 按 best 排序后, 6 个最具代表性的 ckpt 实际渲染 (300 步 CA, 40$\times$60 网格, 来自浏览器训练时直接捕获的 panel grid) 如图~\ref{fig:top-grids}。前 4 个是 ``跑出来的高分迷宫'' (Top 1--3 + Top 5), 后 2 个是 ``重点特征失败模式'' (Fail 1, Fail 2), 都用各自的 (mask, maxFam, seed) 配置训练出来, 渲染时取 ``withInvert'' 优化中分数更高的那一个 (浏览器训练时同时跑原版与反版, 取 max)。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.96\linewidth]{../figures/v2/fig_top_grids.png}
+\caption{\textbf{ES 跑出来的高分迷宫 (Top 1--3 + Top 5) 与重点特征失败模式 (Fail 1, Fail 2)。}
+6 个 ckpt 在 300 步 CA 之后的 40$\times$60 终态。Top 1--3 的 maze\_quality 均 $\ge 0.81$, 4 个真迷宫共享 path-ratio $\approx 0.48$--$0.49$ (约半数通路半数墙), 即 maze attractor;
+Top 5 (manhattan-4 / mf=1) 是 ``均值降 / 峰值升'' 现象的体现: mf=1 的全局均值最低 (0.6984), 但 0.7999 的全场最高分就出现在 mf=1 上。
+Fail 1 (chebyshev-4 / mf=1) path-ratio 仅 $0.31$, 是 ``过稀疏'' 失败 ($2^{103}$ 搜索空间 vs $10^5$ 预算, 大量 ``无梯度平台'' 让 CA 烧光活细胞);
+Fail 2 (manhattan-1 / mf=2) path-ratio $0.50$ 但 ``过连通'': 4 邻域只要求避让直接相邻的墙, 加上 mf=2 把墙推到最薄, CA 演化出几乎完全开放的网格, 缺乏走廊结构。}
+\label{fig:top-grids}
+\end{figure}
+
+\begin{itemize}[leftmargin=*, itemsep=0pt, topsep=0pt]
+  \item \textbf{Top 1--3 共享 attractor。} 4 个 mf=8 真迷宫彼此视觉上很相似, 都收敛到 ``40$\times$60 网格最大连通迷宫'' 配置, path-ratio $\approx 0.48$--$0.49$ (约半数通路半数墙)。这说明 ES 已经在多个 (mask, seed) 配置下稳定找到同一吸引子, 进一步扩大网格 (大范围 sweep) 不会带来质的提升 (§6.3)。
+  \item \textbf{Top 5 是 ``mf=1 偶发突破''。} manhattan-4 / mf=1 / s111 的 0.7999 是 ``均值降 / 峰值升'' 现象的具体体现: mf=1 全局均值 0.6984 (n=28), 但 0.7999 的最高分恰好落在 mf=1 类别中, 而 mf=8 的均值 (0.6306, n=32) 反而低于 mf=1。多族容量升高拖累均值, 但保留了 ``偶发突破'' 的尾部峰值。
+  \item \textbf{Fail 1 是预算受限失败。} chebyshev-4 / mf=1 / s111 path-ratio 仅 $0.31$, 大量 ``黑色虚空'', 几乎看不到一条贯通主路径。这是 $2^{103}$ 搜索空间 vs $10^5$ 预算的不对称: ES 在大量 ``无梯度平台'' 上原地踏步, CA 倾向于把活细胞烧光。增加预算 (pop$\times$gens) 或降低 mask 维度能缓解, 但增加邻域半径不行 (因为根因是搜索空间, 不是表征)。
+  \item \textbf{Fail 2 是表征受限失败。} manhattan-1 / mf=2 / s444 path-ratio $0.50$ 但 ``过连通'': 4 邻域只要求避让直接相邻的墙, mf=2 又把墙推到最薄, CA 演化出几乎完全开放的网格, 缺乏走廊结构。这个失败不能靠加预算解决, 必须把 mask 换成 manhattan-2 / manhattan-3 / chebyshev-1 等更高邻域半径。
+\end{itemize}
+
 \subsection{小范围 vs 大范围对比}
 
 小范围 sweep 122 个 OK run 提供完整的 (mask, maxFam) 消融数据 (§5.3); 大范围 sweep 的 5/5 run 提供 ``同配置, 大网格'' 的 scale-up 证据 (§5.2)。两者对比要点:
