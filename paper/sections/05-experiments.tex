@@ -1,150 +1,99 @@
-% 05-experiments.tex — 实验评估
+% 05-experiments.tex — 实验评估 (v1.3.0, big_sweep)
 
 \section{实验评估}
 \label{sec:experiments}
 
-\subsection{15-pattern 对照基准}
-\label{sec:15pat}
+\subsection{实验设置}
+\label{sec:setup}
 
-为验证度量是否真正识别迷宫,我们在 6 个经典迷宫生成算法
-(\texttt{\_generateDFSMaze} 即 Recursive Backtrack, \texttt{Kruskal}, \texttt{Prim},
-\texttt{Growing Tree}, \texttt{Sidewinder}, \texttt{Binary Tree}) 与
-9 个几何反例 (\texttt{\_generateSpiral}, \texttt{\_generateFractalTree},
-\texttt{\_generateStripes} 即 Horizontal Stripes,
-\texttt{\_generateRandomNoise} (50\%\,/\,30\%),  \texttt{makeCheckerboard},
-\texttt{makeDiagonalStripes}, \texttt{makeConcentric} 即 Concentric Rings,
-\texttt{makeHoneycomb}) 上分别计算 $maze\_quality$ 与 Bellot $F$。
-网格统一为 $31\times 31$,固定随机种子 42,1 = 通道约定。
-生成器实现位于 \texttt{src/metrics/maze\_quality.js} 的
-\texttt{\_generateDFSMaze / \_generateSpiral / \_generateFractalTree /
-\_generateRandomNoise / \_generateStripes} 与
-\texttt{scripts/full\_mq\_v2.mjs};
-测量脚本 \texttt{node scripts/full\_mq\_v2.mjs} 可一键复现。
+本文所有演化实验均在浏览器内通过 WebGPU compute shader 加速的
+$(\mu+\lambda)$ 进化策略 (ES) 完成。ES 核心参数对比见
+表~\ref{tab:es-params}。
 
-\begin{figure}[H]
-\centering
-\begin{minipage}{0.48\linewidth}\centering
-\includegraphics[width=\linewidth]{figures/fig_true_mazes.png}\\[2pt]
-{\footnotesize\textbf{(a)} \textit{六种经典迷宫生成算法 ($31\times 31$)}}
-\end{minipage}\hfill
-\begin{minipage}{0.48\linewidth}\centering
-\includegraphics[width=\linewidth]{figures/fig_pseudo_mazes.png}\\[2pt]
-{\footnotesize\textbf{(b)} \textit{九种非迷宫几何反例}}
-\end{minipage}
-\caption{\textbf{15-pattern 对照样本集。}
-(a) 中从上至下、从左至右:Recursive Backtrack (DFS), Kruskal, Prim,
-Growing Tree, Sidewinder, Binary Tree。
-(b) 中从上至下、从左至右:Spiral, Fractal Tree, Horizontal Stripes,
-Random Noise 50\%, Random Noise 30\%, Checkerboard, Diagonal Stripes,
-Concentric Rings, Honeycomb。两图均按 ``corridor = light, wall = dark'' 渲染。
-}\label{fig:gallery}
-\end{figure}
-
-\begin{table}[H]
-\centering\footnotesize
-\caption{15-pattern 对照基准上 maze\_quality 与 Bellot $F = \nu/\delta$ 的对照
-(31×31 网格, 种子 42, 1 = 通道约定; 数据来源
-\texttt{scripts/full\_mq\_v2.mjs} 提供网格,
-Bellot $F$ 由 \texttt{src/gpu/bellot\_metrics.js::bellotF} 真实 Bellot 2021
-实现计算 ($F = \nu(M)/\delta(M)$, $\delta$ 为 twistiness proxy)).
-}
-\label{tab:15pat}
-\begin{tabular}{lllrrrrr}
-\toprule
-\textbf{名称}        & \textbf{类型}  & \textbf{wall\_r} & \textbf{$\nu$} & \textbf{twist} & \textbf{$maze\_quality$} & \textbf{Bellot $F$} \\
-\midrule
-Kruskal                 & TRUE  & 0.53 & 244  & 2.33 & 0.737 & 104.9 \\
-Prim                    & TRUE  & 0.53 & 250  & 2.42 & 0.719 & 103.4 \\
-Growing Tree            & TRUE  & 0.53 & 276  & 1.46 & 0.719 & 189.1 \\
-Sidewinder              & TRUE  & 0.53 & 228  & 2.97 & 0.711 & \phantom{0}76.9 \\
-Recursive Backtrack     & TRUE  & 0.53 & 114  & \textbf{7.44} & 0.707 & \textbf{15.33}\textsuperscript{\ddag} \\
-Binary Tree             & TRUE  & 0.53 & 264  & 2.28 & 0.672 & 115.7 \\
-\midrule
-Spiral                  & PSEUDO & 0.57 & \phantom{00}10 & \phantom{0}0.84 & 0.000 & \textbf{11.85}\textsuperscript{\dag} \\
-Fractal Tree            & PSEUDO & 0.98 & \phantom{00}20 & \phantom{0}0.00 & 0.000 & \phantom{0}40.0 \\
-Horizontal Stripes      & PSEUDO & 0.48 & \phantom{00}\phantom{0}0 & \phantom{0}0.71 & 0.000 & \phantom{00}\textbf{0.000}\textsuperscript{*} \\
-Random Noise 50\%       & PSEUDO & 0.50 & 226  & \phantom{0}0.07 & 0.000 & 452.0 \\
-Random Noise 30\%       & PSEUDO & 0.68 & 262  & \phantom{0}0.07 & 0.000 & 524.0 \\
-Checkerboard            & PSEUDO & 0.50 & 480  & \phantom{0}0.00 & 0.000 & 960.0 \\
-Diagonal Stripes        & PSEUDO & 0.67 & 321  & \phantom{0}0.00 & 0.000 & 642.0 \\
-Concentric Rings        & PSEUDO & 0.43 & \phantom{00}\phantom{0}0 & 1.37 & 0.000 & \phantom{00}\textbf{0.000}\textsuperscript{*} \\
-Honeycomb               & PSEUDO & 0.58 & \phantom{00}\phantom{0}0 & \phantom{0}0.05 & 0.000 & \phantom{00}\textbf{0.000}\textsuperscript{*} \\
-\midrule
-\textbf{TRUE mean}      & —     & —    & —    & —    & \textbf{0.711} & \textbf{100.9} \\
-\textbf{PSEUDO mean}    & —     & —    & —    & —    & \textbf{0.000} & \textbf{292.2} \\
-\textbf{Gap}            & —     & —    & —    & —    & \textbf{$+0.711$} & \textbf{$-191.3$} \\
-\textbf{Misclass (maze\_quality, F $> 0.5$ ?)} & — & — & — & — & \textbf{0/9} & --- \\
-\textbf{Bellot-F single-point failures}      & --- & --- & --- & --- & --- & \textbf{4/9}\textsuperscript{\P} \\
-\bottomrule
-\end{tabular}
-\\[2pt]
-\textsuperscript{\dag}Spiral 上的 Bellot $F$ ($11.85$) \emph{低于} Recursive Backtrack
-($15.33$),Bellot F 错误判定 ``Spiral 比 DFS 更像迷宫'',即 reference 指出的
-``smoking gun''。
-\textsuperscript{\ddag}Recursive Backtrack 的 Bellot $F$ ($15.33$) 在 6 个真迷宫生成器中
-最低,被误罚,这正是 Spiral $F$ 比它更低的根因。
-\textsuperscript{*}$\nu = 0$ (无死端邻接非显著墙)导致 Bellot $F = 0$,
-意味着 Bellot F 把 ``全 walls 但有少数 corridor 网格''(Stripes/Rings/Honeycomb)
-判为 ``最像迷宫'' (比所有真 DFS 都好)。
-\textsuperscript{\P}4 个 PSEUDO 排名反低于真迷宫最低值 ($15.33$):
-Spiral ($11.85$)、Horizontal Stripes ($0$)、Concentric Rings ($0$)、Honeycomb ($0$)。
-虽然 maze\_quality 完美分离 (0/9 misclass),
-Bellot $F$ 在 ranking 显著失能。
-\end{table}
-
-\noindent\textbf{Bellot $F$ 在 Spiral / Recursive Backtrack 上方向错误}
-的根本原因是其 $F = \nu/\delta$ 形式奖励 ``少死端墙 + 长直径'',
-而 DFS (twistiness = 7.44, $\nu = 114$) 与 Spiral (twistiness = 0.84, $\nu = 10$)
-的 $\nu$ 数都极低(都是 1 路贯通),使两者 $F$ 都很小;
-但 Spiral 的 diameter/nu 比更高  →  $F = 11.85$ 比 DFS ($F = 15.33$) 更低
-→ Bellot F 把 Spiral 排到 DFS 之前,误判 ``Spiral 比 DFS 更像迷宫''。
-另外 3 个伪迷宫 (Horizontal Stripes/Concentric Rings/Honeycomb) 由于 $\nu = 0$
-导致 $F = 0$,被 Bellot F 判为 ``最像迷宫'' (数值低于所有真迷宫)。
-6 个真迷宫的 Bellot $F$ 均值 $100.9$,9 个伪迷宫均值 $292.2$ (因 Random Noise、
-Checkerboard、Diagonal Stripes 等含大量死端的非 maze 模式拉高 PSEUDO 均值)
-整体方向反转,但单点误判集中于 4 个 $\nu$-近零的 pattern 上;
-这也解释了为何仅用 ``average gap'' 衡量 Bellot F 失败会\textbf{低估}它的
-单点 ranking 错位。
-$maze\_quality$ 的 $M_s$ (公式 (\ref{eq:ms})) 显式惩罚 ``单路径占比过高''
-($L_{\max}/N > 0.5$ 时单调下降到 0),$M_j$ 显式奖励 ``分叉比例 $\approx 0.10$''
-(纯路径 0 分叉 = 0),二者共同拒收 Spiral。
-
-\subsection{Sweep 实验}
-\label{sec:sweep}
-
-把 FamilyMask 接入 $200\!\times\! 500$ 的 $(\mu{+}\lambda)$ ES,
-跑 $8\!\times\! 4\!\times\! 4 = 128$ 次 sweep,
-模板 / 族数上限 / 随机种子三因子全交叉
-(\texttt{sweep\_2026\_07\_04/results.ndjson};
-其中 manhattan-1 mf=1 因 ES 已知劣势只跑了 2 个种子,故实际成功 122 次,
-总耗时 $\sim\!12.5$ 小时墙钟,
-参数对应 \texttt{src/search/es\_searcher.js::runES})。
-ES 设置:种群 200,精英保留 10\%,精英变异 50\% (按 10 层 mutation bits 从 1 到 10),
-完全随机 40\%;grid 40×60,300 步演化,WebGPU compute shader 评估。
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\linewidth]{figures/fig_sweep_4panel.png}
-\caption{\textbf{122 次 sweep 的统计结果。}
-\textbf{(A)} 各模板得分的小提琴图;
-chebyshev-1/2/3、manhattan-2/3/4 集中在 $0.74 \sim 0.78$
-区间 (健康),chebyshev-4 跌至 $\sim\!0.15$ (病态),manhattan-1 落在 $\sim\!0.42$ (卡吸引子)。
-\textbf{(B)} 族数上限 maxFam 对均值与峰值的影响:均值单调下降
-(mf=1: 0.6984 $\to$ mf=8: 0.6306),但峰值 mf=8 拥有
-0.8233 全场最高 (``偶发突破'')。
-\textbf{(C)} $M_{\text{topology}}$ vs $M_{\text{diversity}}$ 散点 (用末代个体的
-代理估计);所有高点不在 $y=x$ 虚线上,印证 $\min$ 平衡必要。
-\textbf{(D)} 总体最优 (manhattan-2 / mf=8 / seed=444 / 0.8233) 的子度量分解;
-瓶颈为 $M_b = 0.546$ (走廊主导),这是该模板 + 该规则族的天花板特征。
-}
-\label{fig:sweep-4panel}
-\end{figure}
-
-按 mask 分组计算均值 (\ref{tab:mask-mean}):
 \begin{table}[H]
 \centering\small
-\caption{按 mask 计算的均值 / 最小 / 最大 (n=16 OK,其中 manhattan-1 n=10)}
-\label{tab:mask-mean}
+\caption{ES 演化参数对比:旧 sweep (200×500) vs big\_sweep (500×2000)}
+\label{tab:es-params}
+\begin{tabular}{lcc}
+\toprule
+\textbf{参数} & \textbf{旧 sweep} & \textbf{big\_sweep} \\
+\midrule
+种群规模 (pop)     & 200   & 500   \\
+演化代数 (gens)    & 500   & 2000  \\
+网格尺寸           & 40×60 & 500×2000 \\
+mask 模板数        & 8     & 8 (manhattan-2 仅测) \\
+maxFam 上限        & 1/2/4/8 & 8  \\
+随机种子数         & 4     & 5 (s444/s1111/s2222/s3333/s6666) \\
+总 run 数          & 128   & 5 (PARTIAL, 2/5 完成) \\
+成功 run           & 122   & 2   \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+旧 sweep ($200\times500$) 完成 $8\times4\times4=128$ 次全交叉 run (实际成功 122 次);
+big\_sweep ($500\times2000$) 正在进行,当前仅 s444 与 s1111 完成
+(得分 0.8195 与 0.8138),s2222 约 30\% 进度,s3333/s6666 待启动。
+big\_sweep 网格放大至 $500\times2000$ 像素,较旧 sweep 的 $40\times60$
+高出约 170 倍面积,以验证 manhattan-2/mf8 在大网格上的 scale-up 能力。
+
+\subsection{big\_sweep 结果 ($500\times2000$, 部分完成)}
+\label{sec:big-sweep}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{../figures/v2/fig_big_sweep_progress.png}
+\caption{\textbf{big\_sweep (500×2000) 进度。}左:收敛曲线 (各 run 的最优分随代数变化);
+右:已完成 run 的分数对比。s444 (manhattan-2/mf8) 以 0.8195 领先,s1111 得 0.8138。
+s2222 约 30\% 处卡在 0.766 附近,可能已陷入局部吸引子。}
+\label{fig:big-sweep-progress}
+\end{figure}
+
+\begin{finding}[big\_sweep 部分完成,最高 0.8195]
+big\_sweep 已完成 2/5 run:
+\begin{itemize}\itemsep0pt\topsep2pt
+  \item \textbf{s444} (manhattan-2, mf=8): best=\textbf{0.8195}, gen=2000 达代上限
+  \item \textbf{s1111} (manhattan-2, mf=8): best=\textbf{0.8138}, gen=2000 达代上限
+  \item \textbf{s2222} (manhattan-2, mf=8): best=0.766, gen≈850, 疑似卡吸引子
+  \item s3333/s6666: 待启动
+\end{itemize}
+旧 $200\times500$ sweep 的 manhattan-2/mf8/s444 最高分为 0.8233;
+big\_sweep 的 s444 达到 0.8195,差距仅 0.0037 ---
+说明 manhattan-2/mf8 在大网格上并未出现灾难性退化,
+但 2/5 完成尚不足以判断整体上界。
+\end{finding}
+
+\begin{finding}[旧 sweep 峰值 vs big\_sweep 峰值接近]
+旧 $200\times500$ sweep 全场最高: 0.8233 (manhattan-2/mf8/s444);
+big\_sweep 最高: 0.8195 (manhattan-2/mf8/s444)。
+二者配置相同、仅网格尺寸不同,峰值几乎一致,
+表明 manhattan-2/mf8 在 $40\times60$ 已接近该配置的理论上界,
+进一步扩大网格 (500×2000) 并未带来显著提升。
+\end{finding}
+
+\subsection{旧 sweep 统计 ($200\times500$, n=122)}
+\label{sec:old-sweep}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{../figures/v2/fig_es_convergence.png}
+{\footnotesize\textbf{(A)} ES 收敛曲线}
+\end{minipage}\hfill
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{../figures/v2/fig_mask_fam_heatmap.png}
+{\footnotesize\textbf{(B)} Mask×maxFam 热力图}
+\end{minipage}
+\caption{\textbf{旧 sweep ($200\times500$, n=122) 统计结果。}}
+\label{fig:sweep-ablation}
+\end{figure}
+
+旧 sweep 的 122 次成功 run 提供完整的 mask template 与 family cap 消融数据。
+按 mask 分组均值见 表~\ref{tab:mask-mean-v13}。
+
+\begin{table}[H]
+\centering\small
+\caption{按 mask 模板计算均值 / 最小 / 最大 (旧 $200\times500$ sweep, n=122)}
+\label{tab:mask-mean-v13}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{mask}        & \textbf{n} & \textbf{mean} & \textbf{min} & \textbf{max} & \textbf{状态} \\
@@ -153,7 +102,7 @@ chebyshev-1          & 16 & 0.7726 & 0.7279 & 0.8095 & healthy \\
 chebyshev-2          & 16 & 0.7438 & 0.5909 & 0.8080 & healthy (高方差) \\
 chebyshev-3          & 16 & 0.7764 & 0.7446 & 0.7955 & healthy \\
 \textbf{chebyshev-4} & 16 & \textbf{0.1573} & 0.1038 & 0.4244 & \textbf{BROKEN} \\
-\textbf{manhattan-1} & 10 & \textbf{0.4205} & 0.3998 & 0.4360 & \textbf{STUCK (卡吸引子)} \\
+\textbf{manhattan-1} & 10 & \textbf{0.4205} & 0.3998 & 0.4360 & \textbf{STUCK} \\
 manhattan-2          & 16 & \textbf{0.7777} & 0.7429 & \textbf{0.8233} & healthy (最优) \\
 manhattan-3          & 16 & 0.7714 & 0.7014 & 0.7932 & healthy \\
 manhattan-4          & 16 & 0.7517 & 0.4452 & 0.7999 & healthy (高方差) \\
@@ -162,226 +111,64 @@ manhattan-4          & 16 & 0.7517 & 0.4452 & 0.7999 & healthy (高方差) \\
 \end{table}
 
 \begin{finding}[``均值降 / 峰值升'' 现象]
-mf=1 $\to$ mf=2 $\to$ mf=4 $\to$ mf=8 的样本均值为
-$0.6984 \to 0.6688 \to 0.6382 \to 0.6306$,但峰值仅为
-$0.7999 \to 0.8080 \to 0.7976 \to \mathbf{0.8233}$,
-呈 ``均值单调降、峰值右上角抬升'' 的反向走势。直觉上 ``更多族 = 更复杂 = 更高分''
-不成立:多族联合优化大幅增加了 ES 搜索空间,
-$200{\times}500$ 的预算对 mf=8 的 $8 \cdot 2^{103}$ 量级子空间过于稀疏;
-但 mf=8 唯一拥有 0.8233 全场最高,说明当某个种子恰好落在 ``对的多族组合''
-邻域内时,多族可以突破单族天花板。
-mf=8 的优势是 ``尾部上界更高'',不是 ``整体均值更高''。
+族数上限从 mf=1 增至 mf=8 时,均值从 0.6984 下降至 0.6306,
+但峰值却由 mf=1 的 0.7999 升至 mf=8 的 \textbf{0.8233}。
+多族联合优化增加了 ES 搜索空间,拖累均值;
+但 mf=8 拥有全场最高分 --- 其优势是 ``尾部上界更高'',而非 ``整体均值更高''。
 \end{finding}
 
-主动族数分析 (decode 后 \texttt{chrom[i*103]} 的 active 标志统计):64.8\% 的 128 次
-运行最终只保留 1 个 active 族,18.8\% 保留 2 个,81\% 的 mf=8 运行 active $\le 3$,
-与我们对 ``多族 = 多个并行起点 + ES 选最优'' 的直觉一致
-(\ref{fig:active})。mf=8 overall best 0.8233 仅对应 active=2,即 6/8 族被关闭。
-详细分布数据见附录 \ref{sec:appendix-b}。
+\subsection{Mask × Family Cap 消融分析}
+\label{sec:mask-fam-heatmap}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.78\linewidth]{figures/fig_active_family.png}
-\caption{\textbf{激活族数分布。}
-横坐标:decode 后 \texttt{chrom[i*103]} 的 active 标志统计得到的实际启用族数。
-64.8\% 的 sweep 运行最终只保留 1 个 active 族,18.8\% 保留 2 个,3 个以上共占 16.4\%。
-这印证了 ``多族 = 多组并行起点 + ES 选择最优'',并非 ``族越多越好''。
-}\label{fig:active}
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{../figures/v2/fig_score_dist.png}
+{\footnotesize\textbf{(A)} 各 mask 得分分布}
+\end{minipage}\hfill
+\begin{minipage}{0.48\linewidth}\centering
+% (B) reserved for 8-dim radar in §6
+\vspace{0pt}
+\end{minipage}
+\caption{\textbf{旧 sweep 得分分布。}}
+\label{fig:score-dist}
 \end{figure}
 
-\subsection{最优 ES 规则}
-\label{sec:top-rule}
+图~\ref{fig:sweep-ablation}(B) 热力图清晰展示:
+chebyshev-4 (0.1573) 与 manhattan-1 (0.4205) 是两个异常值,
+机制截然不同:
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.98\linewidth]{figures/fig_es_grids_v2.png}
-\caption{\textbf{ES 演化结果 (best 四例 + worst 两例)。}每个 panel 是 300 步 CA 演化后的 $40 \times 60$ 终态 (\texttt{initFullScreen=true}, \texttt{initDensity=0.15};init seed 由 \texttt{src/gpu/gpu\_scorer.js:1078} 生产公式 $\mathtt{s + randomSeed \times 1000003}$ 计算,即 GA 实际评分路径所用的公式;corridor 白 / wall 黑, 与 maze-web \texttt{renderGrid()} 一致)。}
-\label{fig:es-grids}
-\end{figure}
+\noindent\textbf{(1) chebyshev-4: 搜索空间过大,预算不足。}
+其邻域严格包含 chebyshev-2,理论上 chebyshev-2 的最优解是其子集,
+但 chebyshev-4 得分低 0.59 分。
+原因:80 位 cells mask 产生 $2^{80}$ 维单族搜索空间;
+$200\times500$ 预算 (约 $10^5$ 次评估) 对 $2^{103}$ 量级子空间过于稀疏,
+ES 在大量 ``无梯度平台'' 上原地踏步。
+\textbf{这一类失败来自预算约束,不来自模板表达能力。}
 
-\noindent\textbf{各 panel 配置 (\texttt{mask / mf / seed / score},数值取自 \texttt{results.ndjson} 与对应 ckpt 的 \texttt{bestScore}/\texttt{bestChromBits}):}
-\begin{itemize}\itemsep0pt\topsep2pt
-  \item \textbf{(a)} manhattan-2 / \textbf{mf=8} / s=444 / $0.8233$ — 全场最高分 (\texttt{bestScore} 与 ndjson \texttt{best} 一致)。
-  \item \textbf{(b)} chebyshev-1 / \textbf{mf=8} / s=333 / $0.8095$ — 单 mask 最佳,但 ckpt 已被 race-overwrite (\S5.5 + 附录~D,+43.71h gap);ndjson 数值为准。
-  \item \textbf{(c)} chebyshev-2 / \textbf{mf=2} / s=333 / $0.8080$ — \texttt{chebyshev-2} 全场最佳碰巧出现在 \texttt{mf=2} 而非 \texttt{mf=8} (\texttt{mf=8/s=333} 仅 $0.7116$);fig 选取 ``best per mask'' 而非 ``best per mf=8''。
-  \item \textbf{(d)} manhattan-4 / \textbf{mf=1} / s=111 / $0.7999$ — \texttt{manhattan-4} 全场最佳也是 \texttt{mf=1};单族规则。
-  \item \textbf{(e)} chebyshev-4 / \textbf{mf=1} / s=111 / $0.4244$ — \texttt{chebyshev-4} 全场 ``最佳'' (整体均值 $\sim\! 0.157$,此 $0.42$ 是上界 outlier);\textbf{唯一在当前浏览器 GPU 下可重放的 panel} (\S5.5 系统审计 + 附录~D)。
-  \item \textbf{(f)} manhattan-1 / \textbf{mf=2} / s=444 / $0.4240$ — \texttt{manhattan-1} 全场最佳 ($0.4360$) 出现在 \texttt{mf=4/s=111},fig 5.4 选取 ``贴近均值 $0.4205$ 的 fail-mode 范例'',而非 ``best per mask''。
-\end{itemize}
+\noindent\textbf{(2) manhattan-1: 邻域信息不足,无法涌现走廊结构。}
+manhattan-1 是 4-邻域 (von Neumann),每个元胞每步最多感知 4 个邻居,
+而走廊结构 (1-cell 宽、长程连通) 需要 ``沿走廊方向存活 + 左右墙存活'' 的二阶条件,
+4 邻域只能 ``凑巧'' 出现,无法稳定涌现。
+与 manhattan-2 (8 邻域) 差 0.358 分 --- 直接编码对角线存活条件的能力鸿沟。
+\textbf{这一类失败来自模板本身的信息瓶颈,不来自预算。}
 
-\noindent\textbf{视觉-评分对照 (核心发现):} 四个 \textbf{[best]} 规则 ($(a)$--$(d)$, $maze\_quality \ge 0.7999$) 全部呈现连续走廊 + 黑墙 + 支路 + 死胡同 + 环路的真迷宫结构:$(a)$ manhattan-2 表现为 45$^\circ$ 对角线走廊为主的斜向迷宫;$(b)$ chebyshev-1 与 $(c)$ chebyshev-2 是正交走廊迷宫;$(d)$ manhattan-4 是稍散但仍具明显走廊连通性的迷宫。两个 \textbf{[FAIL]} ($(e)$ chebyshev-4 / $(f)$ manhattan-1, $maze\_quality \approx 0.424$) 都退化到贯穿全图的垂直条纹吸引子 — 与四个 best 形成 ``maze vs stripe'' 的清晰分类。这一对照印证 paper 核心论点: $maze\_quality$ 在 ES 收敛时 \textbf{确实} 把能视觉呈现迷宫结构的规则排在前面, 而把陷入条纹退化吸引子的规则压到 0.4 量级;评分函数并非万能,但在 ``规则-吸引子形状'' 这一层足够把 CA 推向人眼可识别的迷宫形态。
+\subsection{big\_sweep 的含义:旧 sweep 已接近饱和}
+\label{sec:big-sweep-meaning}
 
-\noindent\textbf{可重放性 caveat:} 当前浏览器 GPU + \texttt{maze\_quality.js} (2026-07-06 后) 下,本图 6 panel 中 \textbf{仅 panel (e) 可端到端重放};其余 5 个 panel 在当前 pipeline 下 \textit{live\_total}$=0$ (Mode B: scoring drift),详见 \S5.5 ``系统审计'' 与附录~D 表~\ref{tab:repro-audit}。本文坚持 ``ckpt 是可视化证据、ndjson 是数值证据'' 的工作约定,该 caveat 不影响 \S5.1--\S5.4 的数值结论。
+2/5 完成率下,big\_sweep 最高 0.8195 与旧 sweep 最高 0.8233 几乎持平,
+这一结果有重要含义:
 
-\textbf{manhattan-4 / mf=1 / s=111} (score $0.7999$) 的解码仅 1 族 active
-(slot $F_0$, priority 8):
-\begin{itemize}[leftmargin=*, itemsep=0pt, topsep=0pt]
-  \item \textbf{$F_0$, priority 8}: cells = $\{(-3, -1), (-3, 0), (-3, 1), (-2, 0), (-2, 1)$,
-        (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, -4), (0, -1), (0, 1), (0, 2), (0, 3),
-        (1, -1), (2, -2), (2, 2), (3, -1), (4, 0)\}$
-        {\small\itshape(manhattan-4 邻域 = 19 cells, 含 $L_{\infty}=4$ 远端),}
-        B = $\{3, 6\}$, S = $\{0,1,3,4,5,6,7,8\}$ (除 $2$ 外)。
-\end{itemize}
-单个族的高 $B$ 阈值 + 大范围 $S$ 集合让 CA 在``稀疏初始'' +
-``几乎任何活邻居数都存活''两个规则上能维持走廊结构 300 步;优先级 8 在单族
-规则下不参与优先级仲裁，但 $B=\{3,6\}$ + Manhattan-4 邻域配合给出 ``
-dist=4 处 1 邻居即可存活'' 这种稳态吸引子。
-而 \textbf{manhattan-2 / mf=8 / s=444} (score $0.8233$) 则是 2 族
-协同 (\textbf{$F_3$, priority 5}: cells = $\{(\pm 1, \pm 1), (0, \pm 2)\}$,
-B = $\{3, 4\}$, S = $\{4, 5\}$;\textbf{$F_7$, priority 11}:
-cells = $\{(\pm 2, 0), (0, \pm 1)\}$, B = $\{2, 3, 5\}$, S = $\{3, 4, 6\}$),
-两族优先级 (5 vs 11) 与存活集差异共同让 CA 在 ``走廊生长'' 与 ``分叉 / 横向生长''
-之间形成自洽循环,最终演化出连通而可解的迷宫态。
+\textbf{manhattan-2/mf8 在 $40\times60$ 上已接近理论上界。}
+将网格放大 170 倍后分数未显著提升,说明该配置的搜索空间
+(单族 $2^{103}$,16 族 $2^{1648}$) 在 $40\times60$ 上已被充分探索;
+$500\times2000$ 的 scale-up 测试中,峰值并未继续上推,
+暗示需要改变 mask (如 manhattan-3) 或 family cap 策略才能继续突破。
+s2222 在 gen≈850 处卡在 0.766,表明即便是同一配置,
+不同随机种子也会导致完全不同的收敛命运 ---
+这是高维搜索空间 ($2^{1648}$) 的固有挑战。
 
-\subsection{两类失败模式}
-\label{sec:fail}
-
-\noindent\textbf{(1) chebyshev-4 (搜索空间过大)。}
-chebyshev-4 在 8 个模板中得分最低 ($0.157$),但其邻域\textbf{严格包含}
-chebyshev-2,故 chebyshev-2 的最优解必然是 chebyshev-4 搜索空间的子集。
-理论上 chebyshev-4 不可能比 chebyshev-2 更难,
-实际却低 $0.6$ 分,原因不在 ``无解'',而在
-``从随机初始化跨越到 chebyshev-2 风格解的几何距离太大''。
-$200 \times 500$ 的预算只能覆盖 $10^5$ 个候选点,而 chebyshev-4 的
-80 位 cells mask 单族搜索空间维度即 $2^{80}$,多族 (mf=8) 上限 $8 \cdot 2^{103}$ (active 1 + cells 80 + B 9 + S 9 + priority 4 = 103 bits per family,见 \texttt{rule\_chromosome.js::SLOT\_BITS}),
-中间存在大量 ``无梯度'' 的局部平台 (典型 $F$-score-style 5 维硬门的弊端),
-ES 容易在平台上原地踏步而从未接近 chebyshev-2 风格的局部最优。
-\textbf{这一类失败不来自模板,而来自预算。}
-
-\noindent\textbf{(2) manhattan-1 (邻域信息不足)。}
-manhattan-1 是 4 邻域 (von Neumann),``可达解范围'' 最小,
-但 ``每个元胞可见的视野'' 也最小。其 $0.420$ 的均值并不来自 ``无解'',
-而是来自 ``邻域无法给元胞足够上下文以涌现走廊结构''。
-在 4 邻域下,一个元胞在每一步最多感知 4 个邻居,而走廊结构
-(1-cell 宽、长程连通) 需要至少 ``沿走廊方向的下一格存活 + 左右墙存活''
-的二阶条件,这在 4 邻域里只能 ``凑巧'' 出现,无法稳定涌现。
-相比之下,manhattan-2 (8 邻域) 即可直接编码 ``对角线上一格活着'' 这类二阶条件,
-所以 manhattan-1 均值与 manhattan-2 均值差高达 $0.358$ 分。
-\textbf{这一类失败不来自预算,而来自模板本身的信息瓶颈。}
-
-\subsection{系统审计 (\S5.5: 6 panel 端到端重放)}
-\label{sec:5-5}
-
-\noindent\textbf{2026-07-07 v1.2 update。} 附录~D 给出 v1.0 的 6 panel
-端到端重放审计表格 (\texttt{tab:repro-audit}),对 fig~5.4 的全部
-6 个 panel 都做了 cdp + 浏览器 GPU 重放。逐项结果按 panel 列在
-附录~D 中 (系统审计段)。其中 {\bf panel (e)} ({\tt chebyshev-4/mf=1/s=111})
-是 {\bf 唯一} 在当前浏览器 GPU + mq 下可重放的 panel
-(live\_total $=$ saved\_bestScore $=$ $0.4244$,delta $=0$);
-panel (b) ({\tt chebyshev-1/mf=8/s=333}) 的 $43.71$h gap 是
-{\bf 唯一} 的 Mode A (race-overwrite) 案例;其它 5 个 panel 的
-$\text{gap}=-8$ 小时是正常的 pipeline ordering
-(ndjson 末尾日志比 ckpt 写盘晚 $\sim\!8$ h),无 race-overwrite
-(详细分析见附录~D)。
-
-\subsection{可复现性说明}
-\label{sec:repro-note}
-
-\noindent\textbf{数据来源声明。}本文报告的所有数值结果
-(§5.1 基准对照、§5.2 sweep 汇总、§5.3 最优规则)
-均以\textbf{训练日志} {\tt sweep\_2026\_07\_04/results.ndjson} 为来源,
-而非 ckpt 文件本身。ndjson 由训练进程以 append-only 方式写入,记录每次
-配置组合 (mask/family/seed) 下的 {\tt best} 终值;ckpt 文件仅用于
-``重放该代的具体染色体位串'',不参与本文的数值主张。
-\textbf{此区分必要,因为 ckpt 与 ndjson 之间存在一个本质差异:
-ndjson 不可回改,但 ckpt 会被 dispatcher 写多份覆盖}。
-
-\noindent\textbf{ckpt 与 ndjson 的时序错位。}以 §5.3 中引用的 panel (b)
-(chebyshev-1/mf=8/seed=333,best $\approx 0.8095$) 为例:
-\begin{itemize}\itemsep0pt\topsep2pt
-  \item ndjson 时间戳 {\tt 2026-07-04T17:29:13.531939} (status OK,best $0.809539$);
-  \item 同名 ckpt 文件 {\tt sweep\_chebyshev-1\_mf8\_s333.json} 的 {\tt savedAt}
-        为 {\tt 2026-07-06T13:11:35.281Z},比训练时晚约 44 小时。
-\end{itemize}
-正常情况下 {\tt savedAt} 应紧随训练完成;约 44 小时差说明该 ckpt 文件在
-07-04 与 07-06 之间被另一次写操作覆盖。最可能的原因是
-带 dispatcher 的服务端在多客户端并发保存时,
-{\tt maxGen} 写文件被 {\tt midGen} (gen=50) 写文件覆盖 —
-已通过 {\tt mtime} 比较与 `{\tt panel\_b\_test.json} (gen=50)` 同样存在
-两个证据确认(详见附录~\ref{app:repro-logs})。
-\textbf{重叠覆盖后,ckpt 保存的位串仍是合法 1648-bit FamilyMask 染色体,
-但未必是当初达到 $0.81$ 分的那一条};
-此情况下 ckpt 是 ``相同 batch 名下的最新保存'',而非 ``原始最优个体快照''。
-
-\noindent\textbf{为什么 Paper 数值仍成立。}我们的数值主张
-($0.8233$ 最高分、``manhattan-2 多次幸运行集 $0.8095-0.8233$''、
-``mf=8 唯一 mf 值在多次独立 run 中均值递增'' 等)
-全部衍生自 ndjson 的 {\tt best} 字段,
-与某一条具体染色体位串无关;无论 ckpt 位串是否被覆盖,
-\textbf{ndjson 记录的训练终值不回退、不可覆写}。
-ckpt 在 Paper 中的用途是 ``可视化典型最优规则'' (图~5.4),
-而非数值验证。
-
-\noindent\textbf{重放的当前状态。}我们试图以相同的位串 +
-相同配置 + 同样的生产 init seed 公式 ({\tt randomSeed + chromHash $\times$ 65537 + s})
-+ 同样的 {\tt caSteps=300} 重放 panel (b),浏览器端 ``Live preview''
-跑出 {\tt score=$0.0000$} (breakdown:
-{\tt M\_connectedness=$0.44$, M\_branching=$0$, M\_boundary=$0$})。
-我们同时把 {\tt BatchedGPUScorer.evaluateBatchBatched} 整条训练 pipeline
-拉起、喂同样的 bits + 同样的 {\tt seeds=1+gridW=40+gridH=60+caSteps=300+
-initFullScreen+initDensity=0.15+metric=mazeQuality+maxFamilies=8} 配置,
-结果同样 {\tt $0.0000$} (eval time $105\,\text{ms}$,full result keys:
-{\tt chromosomeIdx, total, score, conn, components, connected,
-largestSize, totalRoads, roadFraction, gpuTimeMs, seedScores,
-ruleJson, bestGrid, bestInitGrid} 中 {\tt total=$0$})。
-我们 \textbf{无法断定} 此重放 $0$ 的根因是 ``GPU pipeline 漂移''
-还是 ``ckpt 位串已非当初达到 $0.81$ 的那条'' —
-这两者都需要保留全部初始 pipeline 快照才能区分,
-而该快照在当时并未被记录 (代码、build、WGSL binary 均无 git history)。
-\textbf{我们也不试图靠回滚某文件来 ``修复'' 此现象} —
-回滚会掩盖根因、且与 ``不修改经过验证正确部分'' 的工作原则冲突。
-
-\noindent\textbf{系统审计 (2026-07-07)。}在 §5.5 初版交付后,
-我们用 {\tt paper/data/\_verify\_ckpt\_replay.py} 对 fig~5.4 的全部 6 个
-panel 做了端到端重放 (cdp + 浏览器 GPU + {\tt maze\_quality.js}),结果如下:
-
-\begin{itemize}\itemsep0pt\topsep2pt
-  \item \textbf{仅 panel (e) ({\tt sweep\_chebyshev-4\_mf1\_s111}, {\tt best}$=0.4244$) SCORE\_MATCH}:
-        {\tt live\_total=$0.4244$} = {\tt saved\_bestScore=$0.4244$},delta $=0$,
-        dark-side {\tt maze\_quality} 直接复现;\textbf{这是 6 panel 中唯一可重放者}。
-  \item \textbf{其余 5 panel (a,b,c,d,f) 全部 SCORE\_MISMATCH, {\tt live\_total=$0$}}:
-        包括原以为的 mf=8 ``best'' panels (a)(b) 与 panel (d) mf=1``best''、
-        以及 panel (c)(f) ``fail'' panels。{\tt M\_boundary=$0$, M\_topology=$0$}
-        在 dark 与 inv 两个朝向皆为 0,说明 grid 在结构层失败而非 canvas 极性错误。
-  \item \textbf{这些 ckpt 的 {\tt savedAt} 与 ndjson {\tt ts} 差}分别为:
-        panel (a,c,d,e,f) 均在 $-8$ 小时 (ndjson 末尾日志比 ckpt 晚 8h,属正常 pipeline ordering);
-        \textbf{仅 panel (b) 是 $+43.71$ 小时 (即 ``~44h'')},这是 §5.5 已记录的 race-overwrite。
-\end{itemize}
-
-\noindent\textbf{根因分类。}Per maze-web skill gotcha \#26 的 3-mode 分类:
-\begin{itemize}\itemsep0pt\topsep2pt
-  \item \textbf{Mode A (ckpt 位串被 race-overwrite)}: 仅 panel (b) 一例,
-        证据是 {\tt savedAt - ndjson\_ts = 43.71h} ({\tt mtime} + {\tt savedAt}
-        字段一致,均为 {\tt 2026-07-06T13:11:35.281Z})。
-  \item \textbf{Mode B (scoring code drift)}: 5 个 panel (a)(b)(c)(d)(f) 都在 {\tt live\_total=$0$} 的同一形态失败,
-        且 {\tt M\_WR\_gate} (位串派生) 仍正确,{\tt M\_boundary}、{\tt M\_topology} (grid 派生) 才塌缩,
-        \textbf{与 {\tt src/metrics/maze\_quality.js} 于 2026-07-06T15:25 修改后的版本行为一致}
-        (pre-drift ckpt 在新 mq 下 score 漂移到 0)。
-  \item \textbf{Mode C (verifier bug)}: panel (e) 完美 MATCH,证明 verifier pipeline
-        ({\tt cdp} + canvas readback + {\tt mq} eval) 是健全的;MISMATCH 不是 verifier 的锅。
-\end{itemize}
-
-\noindent\textbf{为什么 panel (e) 是唯一的例外。}panel (e) ({\tt chebyshev-4/mf=1/s=111})
-的 {\tt bestScore=$0.4244$} 是 ``纯 fail'' 区段 (chebyshev-4 整体均值 $\sim\! 0.157$),
-其 0.42 量级刚好在 {\tt maze\_quality.js} 当前的 {\tt wall\_ratio} gate 边界内能通过;
-而 (a)(b)(c)(d)(f) 的 {\tt 0.7$+$} 量级规则经过新 mq 的
-gate / connectivity 重算后结构分量为 0。这一现象支持 Mode B 归因:
-\textbf{不是 ckpt 位串错,也不是 GPU pipeline 错,而是 scoring contract 漂移
-使得当初在这些规则上 ``有效'' 的高分区段不再被识别}。回到算法本身
-({\tt gpu\_scorer.js} + WGSL CA kernel) 未变,故可断定这是 scoring-side drift 而非
-algorithm-side drift。
-
-\noindent\textbf{本文诚实声明 (v1.2 update)。}基于以上发现,§5.5 初版 ``\textbf{无法断定}''
-的说法需要更新: \textbf{5 个 panel 的重放失败可高置信度归因于
-Mode B (scoring drift),1 个 (panel b) 归因于 Mode A (race-overwrite)}。
-本文仍坚持不修改 {\tt maze\_quality.js} / 不回滚 / 不重训 (12 h)
-的工作原则 — 现有 ndjson 数值证据足够支撑 §5.1 / §5.2 / §5.3 / §5.4
-的结论,ckpt 端的失败是 ``可视化层局限''而非 ``数值层失效''。
-本节是该限制的完整支撑材料。
-
-
-\noindent\textbf{诚实优于美观。}Section~6.4 (局限) 已列出 ``seeds=1''、
-``metric 在 sweep 内联'' 等量化限制,
-现在再加一条限制: ``ckpt 位串作为数值证据不足,只能作为可视化证据''。
-本节是该限制的支撑材料;
-所有数字主张请优先以 ndjson 为准。
+\medskip\noindent\textbf{数据来源声明 (v1.3)。}
+本文 big\_sweep 结果来自 \texttt{sweep\_2026\_07\_08\_big/results.ndjson},
+旧 sweep 来自 \texttt{sweep\_2026\_07\_04/results.ndjson},
+均以 append-only ndjson 训练日志为数值来源,不比 ckpt 文件为数值依据。

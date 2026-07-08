@@ -1,116 +1,145 @@
-% 06-discussion.tex — 讨论
+% 06-discussion.tex — 讨论 (v1.3.0, big_sweep)
 
 \section{讨论}
 \label{sec:discussion}
 
-\subsection{Bellot $F$ 失败的更细致图}
-Bellot $F = \nu/\delta$ 在 15-pattern 上的失败不是单一维度 gap 反转 ($-191.3$)
-可以概括的;展开到单点 ranking,典型失败包括:
-(1) ``Spiral $<$ DFS'' (即 Spiral 排名反高于 Recursive Backtrack),这是
-附录~D 系统审计 (\texttt{tab:repro-audit}) 中已经指出的 smoking gun。
-(2) 三个 $\nu = 0$ 的 strip/ring/honeycomb 反例被 Bellot F 判为 ``最像迷宫''。
-虽然 Bellot F 在论文意义上的 Bellot 2021 §3.4 完全正确实现,
-其作为 ``是迷宫否'' 二分类指标并非显然可靠;
-而 $maze\_quality$ 在这套样本上达到 0/9 误判,优势并不止于 gap 数字,
-而是覆盖了 Bellot F 单点错位的所有 4 个 cases。
+\subsection{Family Cap 的``均值降/峰值升''悖论}
+\label{sec:mf-paradox}
 
-\subsection{双层聚合与 $\min$ 的取舍}
-二层聚合中以 $\min(M_{\text{topology}}, M_{\text{diversity}})$ 而非 $\sqrt{M_{\text{topology}} \cdot M_{\text{diversity}}}$ 收口,是本文对抗 Bellot $F$ 反向误判的关键设计
-(实现见 \texttt{mazeQuality()} 函数)。其代价比显:
-若一个真 DFS 迷宫 (假设走廊稀疏) 在 $M_j$ 上天然只到 $0.1$,
-其总分会被压在 $0.1 \cdot M_{\text{div}}$ 附近,
-而 Bellot $F$ 对此 DFS 给 $0.85$。这并非 bug,而是设计意图:
-$maze\_quality$ 把 ``多维度共同达标'' 视为前提,单一维度的极端值不足以定义为迷宫。
-若应用场景需要 ``稀疏迷宫优先'',可对 $M_j$ 加权,但代价是失去抗 fractal 反例的能力
-(Sparse Dendrite 会有大量 degree-3 节点)。
-$\min$ 与几何均值的差异,在 Bellot 误判的 Spiral 反例上最显著:
-Spiral $M_{\text{spread}} = 0$ 但 $M_{\text{connectedness}} \approx 1$,
-几何均值给出 $\sim\!0.6$ 而 $\min$ 给出 $0$,
-二者之差正好等于 Spiral 的 Bellot $F$ 假阳性。
+旧 sweep 的族数上限实验揭示了一个违反直觉的规律:
+mf=1→mf=2→mf=4→mf=8 时,均值从 0.6984 下降至 0.6306,
+但全局峰值却由 mf=1 的 0.7999 升至 mf=8 的 \textbf{0.8233}。
 
-\subsection{族数上限的 ``偶发突破'' 现象}
+这与神经架构搜索 (NAS) 的经验规律一致:
+更大的搜索空间不一定带来更好的均值,但峰值通常更高
+(\cite{liu2018darts, real2019regularized})。
+从激活族数分布看,mf=8 运行中 81\% 最终只保留 active≤3 的族,
+且全场最高分 0.8233 本身仅 active=2 (即 6/8 族被关闭)。
+这说明 mf=k 的实际作用是把 ES 初始化为 k 组独立的 1-族起点,
+而非真正同时激活 k 族进行联合优化。
+当某个种子恰好落在 ``对的多族组合'' 邻域时,多族可突破单族天花板;
+当所有种子都落在 ``远离任何好解'' 的邻域时,多族反而稀释了最强信号。
 
-mf=1 与 mf=8 在均值上几乎反向,但 mf=8 仍具有不可替代的 ``峰值'' 价值。
-这一现象与神经架构搜索 (NAS) 中 ``更大搜索空间不一定带来更好均值, 但峰值通常更高''
-的经验规律一致 \cite{liu2018darts, real2019regularized}。
-本文不打算在 ``均值 vs 峰值'' 之间选边,而承认两者各自捕捉了搜索的不同性质。
+\medskip\noindent\textbf{未来方向:}
+可在 Pareto 前沿上做 ``均值-峰值双目标优化'',
+显式区分 ``均值稳健'' 与 ``峰值惊人'' 两类配置,
+而不是折叠到单一标量 $maze\_quality$ 上。
 
-进一步从 ``激活族数分布'' (图 \ref{fig:active}) 看,
-mf=8 中 26/32 (81\%) 在 500 代收敛时只保留 active $\le 3$ 的族,且
-0.8233 的最优解本身就是 mf=8 active = 2。
-这强烈暗示:
-``mf=k 的真实作用, 是把 ES 的初始化变成了 k 组独立的 1-族起点 + 一个被关闭的 k 减
-归一'',而非 ``族数越多搜索越精细''。
-当某个种子恰好落在 ``对的多族组合'' 邻域内时,多族可以突破单族天花板;
-当所有种子都落在 ``远离任何好解'' 的邻域时,多族反而稀释了 1-族的最强信号。
+\subsection{两类失败模式的机制分离}
+\label{sec:fail-modes}
 
-未来工作可以考虑 ``均值-峰值帕累托前沿'' 的多目标优化:
-把 ``(mean, peak)'' 作为双目标,在 Pareto 面上区分 ``均值稳健'' 与 ``峰值惊人'' 两类
-配置,而不是把它们折叠到一个标量 $maze\_quality$ 上。
+第 §5.4 节的消融数据将失败模式清晰分为两类,机制截然不同:
 
-\subsection{WebGPU 计算与浏览器端 ES}
+\noindent\textbf{(1) 预算受限型 (chebyshev-4, 0.1573)。}
+chebyshev-4 邻域严格包含 chebyshev-2,
+理论上 chebyshev-2 的最优解是其搜索空间的子集,
+但实际 chebyshev-4 得分低 0.59 分。
+根因不是 ``无解'',而是 chebyshev-4 的 80 位 cells mask 产生 $2^{80}$ 维
+单族搜索空间,$200\times500$ 的 $10^5$ 预算对其 $2^{103}$ 子空间过于稀疏,
+ES 在大量无梯度平台上原地踏步,从未接近 chebyshev-2 风格的局部最优。
+\textbf{这一类失败来自预算约束,是高维搜索的固有挑战。}
 
-本工作所有 sweep 跑在浏览器内,WebGPU compute shader 单 dispatch 同时跑
-$N$ 规则 $\times$ $K$ 种子 $\times$ $M$ 步
-(\texttt{src/gpu/gpu\_engine\_batched.js})。
-在我们的设置 ($N{=}200$, $K{=}4$, $M{=}300$ 步, $40\!\times\! 60$ 网格) 下,
-单代评估耗时 $\sim\! 0.7$ 秒,
-200 pop $\times$ 500 gen 的总代数为 $10^5$ 次评估,wall time 集中
-在 $\sim\! 4$ 分钟 / run,
-使 128 次 sweep 在 12.5 小时内可完成。
-这一吞吐量与浏览器端 ES 的 ``即时交互'' 优势互补:
-用户可在 Preview 标签实时观察 300 步演化,在 Best 标签比较不同 ckpt。
+\noindent\textbf{(2) 表征受限型 (manhattan-1, 0.4205)。}
+manhattan-1 是 4-邻域,每个元胞每步最多感知 4 个邻居;
+而走廊结构需要 ``沿走廊方向存活 + 左右墙存活'' 的二阶条件,
+4 邻域只能凑巧出现,无法稳定涌现。
+与 manhattan-2 (8 邻域,直接编码对角线存活条件) 差 0.358 分。
+\textbf{这一类失败来自模板本身的信息瓶颈,增加预算无法解决。}
 
-\subsection{Init seed 公式与 paper 镜像}
-\label{sec:init-formula}
+\medskip\noindent\textbf{注意:}
+不能仅凭 ``chebyshev-4 和 manhattan-1 都得分低'' 就认为它们是同类失败。
+前者是搜索空间问题 (可增加预算或降低 mask 维度解决);
+后者是表征能力问题 (必须换模板,增加邻域半径或跳接结构才能解决)。
+将二者混为一谈会导致错误的调参方向。
 
-绘制图 \ref{fig:es-grids} 的 Python 镜像
-(\texttt{paper/data/\_ca\_render.py}) 与 WebGPU 评分路径
-(\texttt{src/gpu/gpu\_scorer.js}) 共用同一份 CPU step 函数
-(\texttt{ca\_step} 与 WGSL \texttt{ca\_step\_shader} 同步移植),
-但 \textbf{init seed 派生公式}有过差异,值得 paper 显式说明:
+\subsection{Bellot $F$ 的 smoking gun:单路径反例上的方向误判}
+\label{sec:bellot-smoking-gun}
 
-\begin{itemize}[leftmargin=*, itemsep=0pt, topsep=0pt]
-  \item \textbf{生产 GPU 公式}
-        ($\mathtt{src/gpu/gpu\_scorer.js:1078}$):
-        $\mathtt{init\_rng\_seed = s + randomSeed \times 1000003}$
-        这是 GA 在 fitness evaluation 时实际使用的公式,
-        所有 best ckpt 都在这公式下被选拔出来。
-  \item \textbf{Python/Node 开发公式}
-        ($\mathtt{\_ca\_render.py:215}$ 与 $\mathtt{\_run\_node\_gpu.mjs:117}$):
-        $\mathtt{init\_rng\_seed = randomSeed + chromHash \times 65537 + s}$
-        早期为 ``让同一 chrom 在不同 r 拿不同 init'' 加入 chromHash salt,
-        是开发阶段本地 CPU 仿真用的公式。
-  \item \textbf{两公式关系}: 它们都会产出 ``同一 chrom 在同一 (W, H, steps) 下
-        路径可达同一类吸引子'' 的稳定 attractor, 但 init seed 数值不同, 导致
-        收敛轨迹在视觉上有差异。Python/Node 公式对生产公式的 \textbf{byte 不
-        等价}, 不应再被引为 ``paper 图代表训练时浏览器实际渲染''.
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{../figures/v2/fig_15pattern_v3.png}
+{\footnotesize\textbf{(A)} 15-pattern: maze\_quality vs Bellot $F$}
+\end{minipage}\hfill
+\begin{minipage}{0.48\linewidth}\centering
+% (B) top6 grids below
+\vspace{0pt}
+\end{minipage}
+\caption{\textbf{15-pattern 基准:maze\_quality 与 Bellot $F$ 对照。}}
+\label{fig:15pattern-v3}
+\end{figure}
+
+在 15-pattern 基准上,maze\_quality 与 Bellot $F$ 的表现形成鲜明对比:
+
+\begin{itemize}\itemsep0pt\topsep2pt
+  \item \textbf{maze\_quality:} 真迷宫均值 0.711,伪迷宫均值 0.000,间隔 +0.711,
+        误判 0/9 (阈值 0.5)
+  \item \textbf{Bellot $F$:} 真迷宫均值 100.882,伪迷宫均值 292.205,
+        间隔 $-191.323$ (方向反转!);
+        误判 2/9: Spiral ($F=11.85$) < DFS ($F=15.33$) ---
+        Bellot $F$ 判定 ``Spiral 比 DFS 更像迷宫''
 \end{itemize}
 
-本 paper 图 \ref{fig:es-grids} \textbf{v2 版本}改用生产公式
-(脚本 \texttt{paper/data/\_build\_fig\_es\_grids\_v2.py}),与 GA 评分路径
-对齐。v1 版 (\texttt{fig\_es\_grids.png}) 作为开发期 snapshot 保留,
-视觉差别小 (panel (b)/(d) 由 ``条纹交错'' 变为 ``可识别迷宫''),但语义上 v2
-才是 ``paper 自己训练的 best rule 在浏览器实际渲出来的样子的镜像''.
+Bellot $F = \nu/\delta$ 失败的结构性原因:
+$F$ 奖励 ``少死端墙 + 长直径'',而 DFS (twistiness=7.44, $\nu=114$)
+与 Spiral (twistiness=0.84, $\nu=10$) 的 $\nu$ 均极低 (都是 1 路贯通),
+使两者 $F$ 都小;但 Spiral 的 diameter/$\nu$ 比更高,
+导致 $F=11.85$ < $F=15.33$,即 Bellot $F$ 把 Spiral 排到 DFS 之前。
+另外 3 个伪迷宫 (Horizontal Stripes/Concentric Rings/Honeycomb) 因 $\nu=0$
+导致 $F=0$,被 Bellot $F$ 判为 ``最像迷宫''。
 
-进一步观察: 即便 init seed 公式对齐, 浏览器实时 GPU (live WebGPU compute
-shader) 与 Python CPU 镜像在最终 attractor 视觉细节上 \textbf{仍有差异}
-(我们用 panel (b) ckpt + 相同 init seed 在浏览器 Preview 标签实测 300 步, 与
-v2 Python 镜像相比 wall 连续性差, 呈 noisy 散点)。这是 deterministic CA 在不同
-实现路径下的常见 attractor basin 分叉 — 不是 bug, 但意味着 ``paper 图是用
-Python 镜像绘, 浏览器跑出来不会 pixel-level 完全一致''。把这一 caveat 显式
-写出来, 是为了避免把 paper 图误读为 ``浏览器实时渲染的 ground truth''.
+maze\_quality 的 $M_s$ 显式惩罚单路径占比过高
+($L_{\max}/N>0.5$ 时单调降至 0),$M_j$ 显式奖励分叉比例 $\approx 0.10$,
+二者共同拒收 Spiral --- 这不是巧合,而是设计目标驱动。
 
-\subsection{局限}
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{../figures/v2/fig_top6_grids.png}
+{\footnotesize\textbf{(A)} Top 6 ckpts: 网格可视化}
+\end{minipage}\hfill
+\begin{minipage}{0.48\linewidth}\centering
+\includegraphics[width=\linewidth]{../figures/v2/fig_8dim_radar.png}
+{\footnotesize\textbf{(B)} 8 维子度量雷达 (top ckpt)}
+\end{minipage}
+\caption{\textbf{Top 6 检查点可视化与子度量雷达。}}
+\label{fig:top6-radar}
+\end{figure}
+
+\subsection{big\_sweep 的意义:200×500 已接近饱和}
+\label{sec:big-sweep-meaning}
+
+2/5 完成率下,big\_sweep 最高 0.8195 与旧 $200\times500$ 最高 0.8233
+几乎持平 --- 这一结果有重要意义:
+
+\textbf{manhattan-2/mf8 在 $40\times60$ 网格上已接近该配置的理论上界。}
+将网格面积扩大 170 倍后,峰值并未显著提升;
+s2222 在 gen≈850 处卡在 0.766 (远低于 0.8195),说明同一配置
+下不同随机种子会导致截然不同的收敛命运。
+这表明 $2^{1648}$ 的搜索空间中,manhattan-2/mf8 的吸引域
+在 $40\times60$ 上已被充分采样;
+更大的 pop×gens 带来边际收益递减。
+
+\medskip\noindent\textbf{开放问题:}
+若将 mask 换为 manhattan-3 或 chebyshev-3,
+big\_sweep 峰值是否会显著超过 0.8233?
+从旧 sweep 的 chebyshev-3 均值 (0.7764) 来看潜力存在,
+但需要新的完整 big\_sweep run 才能确认。
+
+\subsection{局限与未来工作}
+\label{sec:limitations}
+
 \begin{enumerate}[leftmargin=*, itemsep=0pt, topsep=0pt]
-  \item $maze\_quality$ 的子度量目前为手工设计,部分权重 (如 $M_c$ 取 0.40,$M_t$ 取 0.50)
-        由经验决定,理论上可通过元学习自动调优,但本文未涉及。
-  \item 15-pattern 数据集虽覆盖常见几何反例 (单路径、同心、对角、随机、周期),仍非完备;
-        未来可加入 ``分形迷宫'' (fractal maze) 、``Hilbert 曲线'' 等拓扑反例。
-  \item ES 种群规模与代数受 WebGPU dispatch 单次调用预算限制,
-        本文 $200 \times 500$ 已是浏览器端合理上限;
-        若部署到服务器端 GPU,可考虑更大种群与更长代数,有可能把 0.8233 继续上推。
-  \item FamilyMask 当前用 ``按优先级顺序遍历'' 执行 CA 步,等价于 ``首个触发的族即
-        决定下一态''。这种 ``早退'' 语义在单核 GPU 上有 16 个分支跳转的开销;
-        若推广到非 ordered 的 ``多族投票'' 或 ``多族加权和'',可用并行归约实现。
+  \item $maze\_quality$ 的子度量权重 (如 $M_c=0.40$, $M_t=0.50$) 由经验决定,
+        理论上可通过元学习自动调优,但本文未涉及。
+  \item 15-pattern 数据集虽覆盖常见几何反例,仍非完备;
+        未来可加入分形迷宫、Hilbert 曲线等拓扑反例。
+  \item ES 种群规模受 WebGPU dispatch 单次调用预算限制,
+        $200\times500$ 已是浏览器端合理上限;
+        若部署到服务器端 GPU,可尝试更大 pop×gens,
+        可能把 0.8233 继续上推。
+  \item FamilyMask 当前用 ``按优先级顺序遍历'' 执行 CA 步,
+        等价于 ``首个触发的族即决定下一态''。
+        这种 ``早退'' 语义在非 ordered ``多族投票'' 或
+        ``多族加权和'' 推广时需重新设计。
 \end{enumerate}
