@@ -24,8 +24,16 @@ mini_sweep_*/
 !mini_sweep_*/README.md
 
 # Empty placeholder dirs
-figures/
-figures/v2/
+figures/*
+!figures/v2/
+!figures/v2/fig_15pattern_v3.png
+!figures/v2/fig_chromosome_v3.png
+!figures/v2/fig_es_convergence.png
+!figures/v2/fig_mask_fam_heatmap.png
+!figures/v2/fig_top6_grids.png
+!figures/v2/fig_score_dist.png
+!figures/v2/fig_8dim_radar.png
+!figures/v2/fig_big_sweep_progress.png
 paper_figs/
 paper_preview/
 
@@ -36,9 +44,11 @@ paper/data/_*.py.bak_*
 paper/data/_*.mjs
 paper/data/_*.json
 !paper/data/sweep_summary.json
+!paper/data/_verify_canonical.json
 !paper/data/_audit_*.md
 !paper/data/_fig_*.md
 !paper/data/_replay_*.md
+!paper/data/_verify_canonical.md
 paper/data/__pycache__/
 paper/data/_compare_init/
 paper/data/_diag_panels/
