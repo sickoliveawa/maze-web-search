@@ -129,13 +129,15 @@ function mJunction(gridData, width, height) {
 }
 
 /**
- * M_connectedness: largest cluster / total roads
- *   - 真 maze: 1 cluster, 100% 全部连通 → 1.0 满分
+ * M_connectedness: largest cluster / total roads (linear, no clip)
+ *   sko 07-08 v6: 之前有 `/ 0.8` clip 让 0.80+ 都饱和到 1.0
+ *     实际 ES 跑出来 largest/totalRoads 都在 0.92-1.00 之间, clip 之后没区分度
+ *     改成纯线性, 0.92 → 0.92 (不饱和), 0.50 → 0.50
+ *   - 真 maze: 1 cluster, 100% 全部连通 → 1.0
  *   - noise: 多 cluster, largest < 5% total → 0.05
  *   - fractal: 1 connected tree → 高
  *   - spiral: 1 connected path → 1.0
- *   formula: largest_size / total_roads
- *   0.8+ 满分, 0.5 中, 0.1 低
+ *   备份: src/metrics/maze_quality.js.bak_2026-07-08_connectedness_uncap
  */
 function mConnectedness(gridData, width, height) {
   // First count totalRoads (all road cells)
@@ -159,8 +161,8 @@ function mConnectedness(gridData, width, height) {
     }
     if (size > largestSize) largestSize = size;
   }
-  // 0.8+ 满分 (largest / total >= 0.8)
-  return Math.min(1, largestSize / totalRoads / 0.8);
+  // v6: 纯线性 largestSize / totalRoads, 无 clip (0.92 → 0.92, 不再饱和到 1.0)
+  return largestSize / totalRoads;
 }
 
 /**
@@ -335,12 +337,17 @@ export function mazeQuality(gridData, width, height) {
   const mT = mTransition(gridData, width, height);
   const mBnd = mBoundary(gridData, width, height);  // ← 新增
 
-  // 2. M_topology: weighted 5-几何平均 (sko 06-29 v4 — 加 mBoundary 修复 exploit)
-  //   之前 4 项: B, S, J, C 各 0.20/0.20/0.20/0.40
-  //   v4 加 mBnd 0.30, 重新分配: B/S/J 各 0.10, C 0.40, Bnd 0.30
-  //   0.10+0.10+0.10+0.40+0.30 = 1.0
-  //   0.7591 grid: mBnd = 0.0 (96.9% 外圈活) → mTop 暴跌, ES 知道要避开外圈
-  const mTopology = Math.pow(mB, 0.10) * Math.pow(mS, 0.10) * Math.pow(mJ, 0.10) * Math.pow(mC, 0.40) * Math.pow(mBnd, 0.30);
+  // 2. M_topology: weighted 5-几何平均 (sko 07-08 v5 — 视觉 vs 评分一致性 fix)
+  //   之前 v4: B/S/J 0.10, C 0.40, Bnd 0.30  → 边界墙 (mBnd=1) + 连通 (mC=1) 拉分太重
+  //   导致 manhattan-2/mf=8 (boundary=1.00, connectedness=0.92, branching=0.55) 排到 #1
+  //   但视觉上是"几条长通道 + 大片空旷",branching/junction 偏低, 缺"迷宫感"
+  //   v5 重新分配: B 0.20, S 0.15, J 0.20, C 0.30, Bnd 0.15  (sum = 1.0)
+  //   branching/junction 权重 + (0.10→0.20), boundary 权重 - (0.30→0.15)
+  //   connectedness 权重 - (0.40→0.30)
+  //   实测: chebyshev-1/chebyshev-2 升到 #1/#2, manhattan-2 从 #1 跌到 #3
+  //         失败案例 (WR_gate 锁住) 排名不变
+  //   备份: src/metrics/maze_quality.js.bak_2026-07-08_topology_weight
+  const mTopology = Math.pow(mB, 0.20) * Math.pow(mS, 0.15) * Math.pow(mJ, 0.20) * Math.pow(mC, 0.30) * Math.pow(mBnd, 0.15);
 
   // 3. M_diversity: weighted 3-几何平均 (sko 06-29 v2 — 提升 M_transition 权重)
   //   v1: 均匀 1/3, M_transition=0.34 被 mA=1.0 拉回到 0.57
