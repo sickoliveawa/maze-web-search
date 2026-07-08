@@ -93,13 +93,12 @@ chebyshev-2 严格包含 manhattan-2。
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{../figures/v2/fig_chromosome_v3.png}
-\caption{\textbf{FamilyMask 染色体结构示意 (以 8 族 / 16 槽为例)。}
+\caption{\textbf{FamilyMask 染色体结构示意 (以 8 族 / 16 槽为例)。}\\
 上方两行共 16 个 \texttt{slot},F2/F5/F9/F12 (暖朱红填充) 示意
 \texttt{active=1},其余空白为 \texttt{active=0}。
-每个 slot 内部 5 段分别为 \texttt{active}\,/\,cells mask (80 位)
-\/\,B (9 位) \/\,S (9 位) \/\,priority (4 位),共 103 位;
-16 slot 共 1648 位。本图为 paper 重新生成的 ASCII 风格结构图,
-\textbf{不依赖装饰性 TikZ}。}
+每个 slot 内部 5 段分别为 \texttt{active}\,,/\,cells mask (80 位)
+/\,B (9 位) \,/\,S (9 位) \,/\,priority (4 位),共 103 位;
+16 slot 共 1648 位。}
 \label{fig:chrom}
 \end{figure}
 

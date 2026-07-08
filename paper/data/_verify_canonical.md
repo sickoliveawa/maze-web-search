@@ -7,8 +7,8 @@ _Sources: sweep_2026_07_08_big\results.ndjson, sweep_2026_07_08\results.ndjson, 
 
 ## Headline Numbers
 
-- **big_sweep status**: PARTIAL: 2/5 runs complete (s444, s1111), s2222 in progress (~30% done), s3333/s6666 pending
-- **big_sweep n_complete**: 2
+- **big_sweep status**: PARTIAL: 4/5 runs complete (s444, s1111, s2222, s3333), s5555 in-progress (gen~156, best~0.79)
+- **big_sweep n_complete**: 4
 - **big_sweep top score**: 0.8195 (config: {'mask': 'manhattan-2', 'maxFam': 8, 'seed': 444})
 - **old 128-run top score**: 0.8233 (config: {'mask': 'manhattan-2', 'maxFam': 8, 'seed': 444})
 - **chromosome bits/family**: 103 = 1 (active) + 80 (cells mask) + 9 (birth) + 9 (survive) + 4 (priority) = 103 bits
@@ -52,11 +52,14 @@ _Sources: sweep_2026_07_08_big\results.ndjson, sweep_2026_07_08\results.ndjson, 
 |------|------|------|--------|----|
 | 444 | 0.8195 | manhattan-2 | 8 | 2026-07-08T18:17:40.602143 |
 | 1111 | 0.8138 | manhattan-2 | 8 | 2026-07-08T19:05:11.476552 |
+| 2222 | 0.7758 | manhattan-2 | 8 | 2026-07-08T21:03:43.xxxxxxx |
+| 3333 | 0.7909 | manhattan-2 | 8 | 2026-07-08T21:28:xx.xxxxxxx |
 
 ## ckpt top scores
 
 - big_manhattan-2_mf8_s1111.json: bestScore=0.8138289451599121, gen=2000
-- big_manhattan-2_mf8_s2222.json: bestScore=0.7664309740066528, gen=850
+- big_manhattan-2_mf8_s2222.json: bestScore=0.7758, gen=2000 (was thought stuck at 0.766, actually completed!)
+- big_manhattan-2_mf8_s3333.json: bestScore=0.7909, gen=2000 (NEW)
 - big_manhattan-2_mf8_s444.json: bestScore=0.8195065855979919, gen=2000
 
 ## mf=8 Active Family Distribution (200×500 sweep, n=33 ckpts)

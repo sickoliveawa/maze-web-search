@@ -5,18 +5,19 @@ regen_figures.py — regenerate 8 paper figures for maze-web v1.3.0
 INDEPENDENT of source code. Reads only:
   - paper/data/_verify_canonical.json  (output of verify_paper_numbers.py)
   - sweep_*/results.ndjson
+  - sweep_2026_07_08_big/sweep.log     (for full convergence data)
   - ckpt/*.json
   - paper/data/sweep_summary.json
 
 Produces 8 figures in figures/v2/:
   - fig_15pattern_v3.png     15-pattern bar chart (re-render with current data)
   - fig_chromosome_v3.png    103-bit slot layout (diagram)
-  - fig_es_convergence.png   best/mean over generations, top runs overlaid
+  - fig_top_runs.png         Top 10 sweep ckpts by best score (bar chart)
   - fig_mask_fam_heatmap.png mask × maxFam heatmap (mean best score)
   - fig_top6_grids.png       panel of 6 best grids (use existing fig_mini_sweep_*)
   - fig_score_dist.png       score distribution per mask template (boxplot)
   - fig_8dim_radar.png       8-dim metric breakdown of top score
-  - fig_big_sweep_progress.png  big_sweep convergence (s444, s1111, s2222)
+  - fig_big_sweep_progress.png  big_sweep convergence (s444, s1111, s2222, s3333, s5555)
 
 Run:  python tools/regen_figures.py
 """
@@ -74,6 +75,7 @@ SWEEP_NDJSON = {
     "v4":   ROOT / "sweep_2026_07_04"      / "results.ndjson",
     "mini": ROOT / "mini_sweep_2026_07_07" / "results.ndjson",
 }
+SWEEP_LOG = ROOT / "sweep_2026_07_08_big" / "sweep.log"
 OLD_SUMMARY = ROOT / "paper" / "data" / "sweep_summary.json"
 
 
@@ -203,48 +205,61 @@ def fig_chromosome():
 
 
 # ============================================================
-# Fig 3: ES convergence (best over generations, top runs overlaid)
+# Fig 3: Top 10 runs by best score (horizontal bar chart)
+# Replaces fig_es_convergence — log_tail has only 3 points, can't plot curves
 # ============================================================
-def fig_es_convergence():
-    # Collect per-gen best curves from log_tail of all OK runs
-    curves = []
+def fig_top_runs():
+    """Top 10 sweep ckpts by best score as horizontal bar chart."""
+    all_runs = []
     for label, path in SWEEP_NDJSON.items():
         for r in load_ndjson(path):
             if r.get("status") != "OK":
                 continue
-            log_tail = r.get("log_tail", "")
-            pts = parse_log_tail_gen(log_tail)
-            if pts:
-                curves.append({
+            b = r.get("best")
+            if b is not None:
+                all_runs.append({
                     "label": f"{label}|{r.get('mask')}|mf={r.get('maxFam')}|s={r.get('seed')}",
-                    "best": r.get("best"),
-                    "pts": pts,
+                    "best": b,
+                    "mask": r.get("mask", "?"),
+                    "maxFam": r.get("maxFam", "?"),
+                    "seed": r.get("seed", "?"),
                     "config": f"{r.get('mask')}-mf{r.get('maxFam')}-s{r.get('seed')}",
                 })
 
-    if not curves:
-        print("  skip: no curves")
+    if not all_runs:
+        print("  skip: no OK runs")
         return
 
-    # Pick top 8 by final best
-    curves.sort(key=lambda c: -(c["best"] or 0))
-    top = curves[:8]
+    # Sort by best score descending, take top 10
+    all_runs.sort(key=lambda c: -(c["best"] or 0))
+    top = all_runs[:10]
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(10, 6))
+    names = [f"{c['mask']} mf={c['maxFam']} s={c['seed']}" for c in top]
+    scores = [c["best"] for c in top]
+
     cmap = plt.cm.tab10
-    for i, c in enumerate(top):
-        gens, bests = zip(*c["pts"])
-        ax.plot(gens, bests, color=cmap(i % 10), linewidth=1.4, alpha=0.85,
-                label=f"{c['config']} (best={c['best']:.3f})")
+    colors = [cmap(i % 10) for i in range(len(top))]
+    bars = ax.barh(range(len(names)), scores, color=colors, edgecolor=COLORS["ink"], linewidth=0.6)
 
-    ax.set_xlabel("generation")
-    ax.set_ylabel("best score")
-    ax.set_title("Fig 3 — ES convergence: top 8 runs by final best",
+    ax.set_yticks(range(len(names)))
+    ax.set_yticklabels(names, fontsize=9)
+    ax.set_xlabel("best score")
+    ax.set_xlim(0.5, 0.9)
+    ax.axvline(0.8233, color=COLORS["ash"], linestyle="--", linewidth=1, alpha=0.8)
+    ax.text(0.824, scores[0] - 0.01, "old sweep\npeak=0.8233", color=COLORS["ash"],
+            fontsize=7, ha="left", va="top")
+
+    # Annotate bars with score value
+    for i, (bar, score) in enumerate(zip(bars, scores)):
+        ax.text(score + 0.003, i, f"{score:.4f}", va="center", fontsize=8, color=COLORS["ink"])
+
+    ax.set_title("Fig 3 — Top 10 sweep ckpts by best score (200×500, n=122 OK)",
                  color=COLORS["vermilion"], fontsize=11, fontweight="bold", pad=10)
-    ax.legend(loc="lower right", fontsize=7, framealpha=0.9)
-    ax.grid(True, alpha=0.2, linestyle=":")
+    ax.grid(True, alpha=0.2, axis="x", linestyle=":")
+    ax.invert_yaxis()  # highest score at top
     plt.tight_layout()
-    out = FIG_DIR / "fig_es_convergence.png"
+    out = FIG_DIR / "fig_top_runs.png"
     fig.savefig(out, dpi=140)
     plt.close(fig)
     print(f"  ✓ {out.relative_to(ROOT)}")
@@ -291,7 +306,7 @@ def fig_mask_fam_heatmap():
                 ax.text(j, i, f"{v:.3f}\n(n={counts[i,j]})",
                         ha="center", va="center", fontsize=7,
                         color="white" if v > 0.5 else COLORS["ink"])
-    ax.set_title("Fig 4 — Mask × maxFam: mean best score (n=128 runs)",
+    ax.set_title("Fig 4 — Mask × maxFam: mean best score (n=122 runs)",
                  color=COLORS["vermilion"], fontsize=11, fontweight="bold", pad=10)
     plt.colorbar(im, ax=ax, label="mean best score")
     plt.tight_layout()
@@ -386,7 +401,7 @@ def fig_score_dist():
         med.set_linewidth(1.5)
     ax.set_ylabel("best score")
     ax.set_ylim(0, 0.9)
-    ax.set_title("Fig 6 — Score distribution per mask template (n=122 OK runs)",
+    ax.set_title("Fig 6 — Score distribution per mask template (8 mask templates, n=122 OK, red line = median)",
                  color=COLORS["vermilion"], fontsize=11, fontweight="bold", pad=10)
     ax.grid(True, alpha=0.2, axis="y", linestyle=":")
     plt.xticks(rotation=20, ha="right")
@@ -452,64 +467,70 @@ def fig_8dim_radar():
 
 
 # ============================================================
-# Fig 8: big_sweep progress
+# Fig 8: big_sweep progress (uses sweep.log for complete runs)
 # ============================================================
 def fig_big_sweep_progress():
-    rows = load_ndjson(SWEEP_NDJSON["big"])
-    if not rows:
-        print("  skip: no big_sweep data")
-        return
-
-    # Also peek at sweep.log for in-progress run
-    log_path = ROOT / "sweep_2026_07_08_big" / "sweep.log"
-    live_curves = []
-    if log_path.exists():
-        # Parse [ES] gen X: best=Y mean=Z
-        cur = None
-        with open(log_path) as f:
+    """Plot big_sweep convergence from sweep.log for complete runs.
+    
+    Complete runs (s444, s1111, s2222, s3333) have full 0-2000 gen data in sweep.log.
+    In-progress run (s5555) has partial data.
+    """
+    live_curves = defaultdict(list)  # seed -> [(gen, best), ...]
+    if SWEEP_LOG.exists():
+        with open(SWEEP_LOG) as f:
             for line in f:
                 m = re.search(r"\[(s\d+)\.console\.log\] \[ES\] gen (\d+): best=([\d.]+)", line)
                 if m:
-                    seed = m.group(1)
+                    seed = m.group(1)  # e.g. "s444"
                     gen = int(m.group(2))
                     best = float(m.group(3))
-                    live_curves.append((seed, gen, best))
+                    live_curves[seed].append((gen, best))
 
-    # Build per-seed series (seed stored as int in ndjson)
-    by_seed = defaultdict(list)
-    for r in rows:
-        if r.get("status") == "OK":
-            seed = r.get("seed")
-            pts = parse_log_tail_gen(r.get("log_tail", ""))
-            for g, b in pts:
-                by_seed[seed].append((g, b))
+    if not live_curves:
+        print("  skip: no sweep.log data")
+        return
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    # Determine which seeds are complete (gen 2000) vs in-progress
+    COMPLETE_THRESHOLD = 1990  # consider >= 1990 as complete
+
+    fig, ax = plt.subplots(figsize=(10, 5))
     cmap = plt.cm.Set1
-    for i, (seed, pts) in enumerate(sorted(by_seed.items())):
+    complete_seeds = []
+    inprogress_seeds = []
+
+    for seed in sorted(live_curves.keys(), key=lambda x: int(x[1:])):
+        pts = sorted(live_curves[seed])
         if not pts:
             continue
-        gens, bests = zip(*pts)
-        ax.plot(gens, bests, color=cmap(i), linewidth=1.6, alpha=0.9, label=f"complete s={seed}")
+        max_gen = pts[-1][0]
+        if max_gen >= COMPLETE_THRESHOLD:
+            complete_seeds.append(seed)
+        else:
+            inprogress_seeds.append(seed)
 
-    # Live curves (regex already captures "s\d+" prefix)
-    live_by_seed = defaultdict(list)
-    for seed, gen, best in live_curves:
-        # seed here is "s2222" (string with 's' prefix from log)
-        live_by_seed[seed].append((gen, best))
-    for i, (seed, pts) in enumerate(sorted(live_by_seed.items())):
-        if not pts or seed in {f"s{s}" for s in by_seed}:
-            continue  # skip duplicates with completed
+    # Plot complete runs with solid lines
+    for i, seed in enumerate(complete_seeds):
+        pts = sorted(live_curves[seed])
         gens, bests = zip(*pts)
-        ax.plot(gens, bests, color=cmap(i + len(by_seed)), linewidth=1.4, alpha=0.6,
-                linestyle="--", label=f"in-progress {seed} (partial)")
+        ax.plot(gens, bests, color=cmap(i), linewidth=1.8, alpha=0.9,
+                label=f"{seed} (complete, best={pts[-1][1]:.4f})")
+
+    # Plot in-progress runs with dashed lines
+    for i, seed in enumerate(inprogress_seeds):
+        pts = sorted(live_curves[seed])
+        gens, bests = zip(*pts)
+        ax.plot(gens, bests, color=cmap(i + len(complete_seeds)), linewidth=1.4, alpha=0.6,
+                linestyle="--", label=f"{seed} (in-progress, gen={pts[-1][0]}, best={pts[-1][1]:.4f})")
 
     ax.set_xlabel("generation")
     ax.set_ylabel("best score")
-    ax.set_title("Fig 8 — big_sweep (500×2000) progress: 2/5 complete, 1/5 in progress",
+    n_complete = len(complete_seeds)
+    n_total = n_complete + len(inprogress_seeds)
+    ax.set_title(f"Fig 8 — big_sweep (500×2000) progress: {n_complete}/{n_total} complete, {len(inprogress_seeds)}/5 in-progress",
                  color=COLORS["vermilion"], fontsize=11, fontweight="bold", pad=10)
     ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
     ax.grid(True, alpha=0.2, linestyle=":")
+    ax.set_ylim(0.1, 0.9)
     plt.tight_layout()
     out = FIG_DIR / "fig_big_sweep_progress.png"
     fig.savefig(out, dpi=140)
@@ -523,7 +544,7 @@ def main():
     print()
     fig_15pattern()
     fig_chromosome()
-    fig_es_convergence()
+    fig_top_runs()
     fig_mask_fam_heatmap()
     fig_top6_grids()
     fig_score_dist()

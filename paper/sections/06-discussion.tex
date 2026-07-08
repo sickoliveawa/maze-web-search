@@ -64,7 +64,7 @@ manhattan-1 是 4-邻域,每个元胞每步最多感知 4 个邻居;
 % (B) top6 grids below
 \vspace{0pt}
 \end{minipage}
-\caption{\textbf{15-pattern 基准:maze\_quality 与 Bellot $F$ 对照。}}
+\caption{\textbf{15-pattern 基准:maze\_quality 单独视图 (§4 的 fig:15pat 包含 Bellot $F$ 对照)。}}
 \label{fig:15pattern-v3}
 \end{figure}
 
@@ -107,12 +107,12 @@ maze\_quality 的 $M_s$ 显式惩罚单路径占比过高
 \subsection{Big Sweep 的意义:200×500 已接近饱和}
 \label{sec:big-sweep-meaning}
 
-2/5 完成率下,big\_sweep 最高 0.8195 与旧 $200\times500$ 最高 0.8233
+4/5 完成率下,big\_sweep 最高 0.8195 与旧 $200\times500$ 最高 0.8233
 几乎持平 --- 这一结果有重要意义:
 
 \textbf{manhattan-2/mf8 在 $40\times60$ 网格上已接近该配置的理论上界。}
 将网格面积扩大 170 倍后,峰值并未显著提升;
-s2222 在 gen≈850 处卡在 0.766 (远低于 0.8195),说明同一配置
+s2222 在 gen≈850 处卡在 0.776 (远低于 0.8195),说明同一配置
 下不同随机种子会导致不同的收敛命运。
 这表明 $2^{1648}$ 的搜索空间中,manhattan-2/mf8 的吸引域
 在 $40\times60$ 上已被充分采样;

@@ -14,15 +14,15 @@
   },
   "sweep_big": {
     "_label": "big",
-    "_n_total": 2,
-    "_n_ok": 2,
+    "_n_total": 5,
+    "_n_ok": 4,
     "_by_mask_fam": {
       "manhattan-2|mf=8": {
-        "n": 2,
-        "mean": 0.8166,
-        "median": 0.8166,
-        "std": 0.004,
-        "min": 0.8138,
+        "n": 4,
+        "mean": 0.8000,
+        "median": 0.8024,
+        "std": 0.020,
+        "min": 0.7758,
         "max": 0.8195
       }
     },
@@ -38,22 +38,34 @@
         "maxFam": 8,
         "seed": 1111,
         "best": 0.8138
+      },
+      {
+        "mask": "manhattan-2",
+        "maxFam": 8,
+        "seed": 3333,
+        "best": 0.7909
+      },
+      {
+        "mask": "manhattan-2",
+        "maxFam": 8,
+        "seed": 2222,
+        "best": 0.7758
       }
     ]
   },
   "sweep_big_bymask": {
     "_label": "big by mask",
     "manhattan-2": {
-      "n": 2,
-      "mean": 0.8166,
+      "n": 4,
+      "mean": 0.8000,
       "max": 0.8195
     }
   },
   "sweep_big_bymf": {
     "_label": "big by maxFam",
     "8": {
-      "n": 2,
-      "mean": 0.8166,
+      "n": 4,
+      "mean": 0.8000,
       "max": 0.8195
     }
   },
