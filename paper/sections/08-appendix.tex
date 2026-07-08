@@ -38,8 +38,11 @@ $H(\cdot)$ 为 Shannon 熵 (自然对数除以 $\ln 2$ 给出比特单位)。
 \begin{align}
   M_b &=
   \frac{\mathrm{clip}\!\left(\#\{v \in V : \deg(v) = 2\} / N - 0.4,\, 0,\, 0.5\right)}{0.5} \\
-  M_s &= \mathrm{clip}\!\left(\min\!\Big(2 - \frac{L_{\max}/N}{0.25},\, 1\Big),\, 0,\, 1\right)
-       \cdot \mathbb{1}\!\left[\frac{L_{\max}}{N} \le 0.75\right] \\
+  M_s &=
+  \begin{cases}
+    \min\!\left(1,\, \dfrac{L_{\max}/N}{0.3}\right), & \dfrac{L_{\max}}{N} \le 0.5 \\[4pt]
+    \max\!\left(0,\, 1 - \dfrac{L_{\max}/N - 0.5}{0.5}\right), & \dfrac{L_{\max}}{N} > 0.5
+  \end{cases}
   M_j &= \exp\!\left[-\left(\frac{\#\{v : \deg(v) \ge 3\} / N - 0.10}{0.10}\right)^{2}\right] \\
   M_c &= \mathrm{clip}\!\left(\frac{|C_{\max}|}{0.8 N},\, 0,\, 1\right) \\
   M_{\text{bnd}} &= \mathrm{clip}\!\left(1 - \frac{a_{\text{outer}} - 4}{76},\, 0,\, 1\right) \\
@@ -149,7 +152,7 @@ ndjson 中 panel (b) (chebyshev-1/mf=8/seed=333) 的完整字段如下:
 
 \noindent\textbf{ckpt 文件的时间戳不一致。}对应 ckpt 文件
 \tt{sweep\_chebyshev-1\_mf8\_s333.json} 的保存时间为
-\tt{savedAt} = \tt{2026-07-06T13:11:35.281Z},比训练时间戳晚约 44 小时 (43.71 小时);
+\tt{savedAt} = \tt{2026-07-06T13:11:35.281Z},比训练时间戳晚约 44 小时 (43.71 小时, 早期 v1.0 草稿曾误写 49h, 已更正);
 \emph{mtime} (文件系统戳) 也指向该时刻。多次访问 (file stat) 期间
 \tt{savedAt} 与 \emph{mtime} 互相对齐到 07-06 13:11,说明该文件至少被
 覆写过一次。
@@ -159,7 +162,7 @@ ndjson 中 panel (b) (chebyshev-1/mf=8/seed=333) 的完整字段如下:
 
 \begin{verbatim}
 $ find ckpt/ -name '*chebyshev-1_mf8_s333*'
-sweep_chebyshev-1_mf8_s333.json           <-- 49h 后被覆写
+sweep_chebyshev-1_mf8_s333.json           <-- 44h 后被覆写 (43.71h 实测)
 sweep_chebyshev-1_mf8_s333.json.bak_*     <-- 备份
 panel_b_test.json                         <-- gen=50 测试写
 \end{verbatim}

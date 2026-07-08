@@ -10,8 +10,7 @@ $\min$-聚合 + 墙比软门控在所有 9 个伪迷宫反例上得分 $0$,
 在 6 个真迷宫生成器上均值 $0.711$,间隔 $+0.711$,无误判;
 对同一数据集,Bellot 2021 $F = \nu/\delta$ 真伪间隔 $-191.3$,且 4/9 伪迷宫
 (Spiral + Horizontal Stripes + Concentric Rings + Honeycomb) 排名反低于
-真迷宫最低值 Recursive Backtrack ($F = 15.33$),即参考 (mazeweb-128-sweep-and-active.md)
-早就指出的 smoking gun。
+真迷宫最低值 Recursive Backtrack ($F = 15.33$),即附录~D 系统审计 (\texttt{tab:repro-audit}) 已经指出的 smoking gun。
 二者在 122 次 WebGPU 加速 $(\mu{+}\lambda)$ ES sweep 上协同得出 $0.8233$ 的全场最高
 分 (manhattan-2 / mf=8 / 种子 444),并从失败样本中清晰分离出 ``搜索空间过大''
 (chebyshev-4, $0.157$) 与 ``邻域信息不足'' (manhattan-1, $0.420$) 两类机制

@@ -7,7 +7,7 @@
 Bellot $F = \nu/\delta$ 在 15-pattern 上的失败不是单一维度 gap 反转 ($-191.3$)
 可以概括的;展开到单点 ranking,典型失败包括:
 (1) ``Spiral $<$ DFS'' (即 Spiral 排名反高于 Recursive Backtrack),这是
-reference (\texttt{mazeweb-128-sweep-and-active.md}) 早就指出的 smoking gun。
+附录~D 系统审计 (\texttt{tab:repro-audit}) 中已经指出的 smoking gun。
 (2) 三个 $\nu = 0$ 的 strip/ring/honeycomb 反例被 Bellot F 判为 ``最像迷宫''。
 虽然 Bellot F 在论文意义上的 Bellot 2021 §3.4 完全正确实现,
 其作为 ``是迷宫否'' 二分类指标并非显然可靠;
@@ -15,8 +15,7 @@ reference (\texttt{mazeweb-128-sweep-and-active.md}) 早就指出的 smoking gun
 而是覆盖了 Bellot F 单点错位的所有 4 个 cases。
 
 \subsection{双层聚合与 $\min$ 的取舍}
-二层聚合中以 $\min(M_{\text{topology}}, M_{\text{diversity}})$ 而非 $\sqrt{M_{\text{topology}}$
-\cdot M_{\text{diversity}}}$ 收口,是本文对抗 Bellot $F$ 反向误判的关键设计
+二层聚合中以 $\min(M_{\text{topology}}, M_{\text{diversity}})$ 而非 $\sqrt{M_{\text{topology}} \cdot M_{\text{diversity}}}$ 收口,是本文对抗 Bellot $F$ 反向误判的关键设计
 (实现见 \texttt{mazeQuality()} 函数)。其代价比显:
 若一个真 DFS 迷宫 (假设走廊稀疏) 在 $M_j$ 上天然只到 $0.1$,
 其总分会被压在 $0.1 \cdot M_{\text{div}}$ 附近,

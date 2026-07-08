@@ -31,7 +31,7 @@ Random Noise (50%/30%)/Checkerboard/Diagonal Stripes/Concentric Rings/Honeycomb)
 且 9 个伪迷宫中有 4 个 ($F = 0$ 的 Horizontal Stripes/Concentric Rings/Honeycomb
 加上 $F = 11.85$ 的 Spiral) 排名反低于真正的 DFS ($F = 15.33$) ,
 即 Bellot F 错误判定 ``Spiral 比 DFS 更像迷宫'',这是
-reference (\texttt{mazeweb-128-sweep-and-active.md}) 早就指出的 smoking gun
+附录~D 系统审计 (\texttt{tab:repro-audit}) 中已经指出的 smoking gun
 (本节下方全部使用 \texttt{src/gpu/bellot\_metrics.js::bellotF} 真实 Bellot 2021 实现
 $F = \nu(M)/\delta(M)$,不再使用早期 \texttt{scripts/full\_mq\_v2.mjs} 的简化版
 $\nu = 1-\text{roadFrac},\, \delta = d/200$)。

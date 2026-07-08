@@ -24,10 +24,10 @@ mini_sweep_*/
 !mini_sweep_*/README.md
 
 # Empty placeholder dirs
-figures/         # reserved for paper figures
-paper_figs/      # legacy paper figures
-paper_preview/   # legacy paper previews
-figures/v2/      # v2 paper fig rendering scratch (kept locally only)
+figures/
+figures/v2/
+paper_figs/
+paper_preview/
 
 # Paper audit / verify / build pipeline (intermediate)
 # KEEP only: sweep_summary.json (paper headline data) + .md audit files

@@ -218,7 +218,8 @@ mf=8 的优势是 ``尾部上界更高'',不是 ``整体均值更高''。
 \begin{itemize}[leftmargin=*, itemsep=0pt, topsep=0pt]
   \item \textbf{$F_0$, priority 8}: cells = $\{(-3, -1), (-3, 0), (-3, 1), (-2, 0), (-2, 1)$,
         (-1, -1), (-1, 0), (-1, 1), (-1, 2), (0, -4), (0, -1), (0, 1), (0, 2), (0, 3),
-        (1, -1), (2, -2), (2, 2), (3, -1), (4, 0)\}$ (manhattan-4 邻域 = 19 cells, 含 $L_{\infty}=4$ 远端),
+        (1, -1), (2, -2), (2, 2), (3, -1), (4, 0)\}$
+        {\small\itshape(manhattan-4 邻域 = 19 cells, 含 $L_{\infty}=4$ 远端),}
         B = $\{3, 6\}$, S = $\{0,1,3,4,5,6,7,8\}$ (除 $2$ 外)。
 \end{itemize}
 单个族的高 $B$ 阈值 + 大范围 $S$ 集合让 CA 在``稀疏初始'' +
@@ -257,6 +258,21 @@ manhattan-1 是 4 邻域 (von Neumann),``可达解范围'' 最小,
 相比之下,manhattan-2 (8 邻域) 即可直接编码 ``对角线上一格活着'' 这类二阶条件,
 所以 manhattan-1 均值与 manhattan-2 均值差高达 $0.358$ 分。
 \textbf{这一类失败不来自预算,而来自模板本身的信息瓶颈。}
+
+\subsection{系统审计 (\S5.5: 6 panel 端到端重放)}
+\label{sec:5-5}
+
+\noindent\textbf{2026-07-07 v1.2 update。} 附录~D 给出 v1.0 的 6 panel
+端到端重放审计表格 (\texttt{tab:repro-audit}),对 fig~5.4 的全部
+6 个 panel 都做了 cdp + 浏览器 GPU 重放。逐项结果按 panel 列在
+附录~D 中 (系统审计段)。其中 {\bf panel (e)} ({\tt chebyshev-4/mf=1/s=111})
+是 {\bf 唯一} 在当前浏览器 GPU + mq 下可重放的 panel
+(live\_total $=$ saved\_bestScore $=$ $0.4244$,delta $=0$);
+panel (b) ({\tt chebyshev-1/mf=8/s=333}) 的 $43.71$h gap 是
+{\bf 唯一} 的 Mode A (race-overwrite) 案例;其它 5 个 panel 的
+$\text{gap}=-8$ 小时是正常的 pipeline ordering
+(ndjson 末尾日志比 ckpt 写盘晚 $\sim\!8$ h),无 race-overwrite
+(详细分析见附录~D)。
 
 \subsection{可复现性说明}
 \label{sec:repro-note}
