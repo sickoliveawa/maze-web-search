@@ -34,6 +34,7 @@ figures/*
 !figures/v2/fig_score_dist.png
 !figures/v2/fig_8dim_radar.png
 !figures/v2/fig_big_sweep_progress.png
+!figures/v2/fig_mq_calculation_v3.png
 paper_figs/
 paper_preview/
 

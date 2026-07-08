@@ -118,10 +118,24 @@ $\min$ 而非几何均值,是与 Bellot $F$ 最关键的区别:
 而是一种 ``结构性 balance'' (短板决定分数,
 迫使 ES 同步提升两侧)。
 
-$M_{\text{wall\_gate}}$ 的三角峰值 $[0.40,\,0.60]$ 与迷宫典型 ``道路占比 $40\%$
+$M_{\text{wall\_gate}}$ 的三角峰值 $[0.40,\, 0.60]$ 与迷宫典型 ``道路占比 $40\%$
 $\!\sim\!60\%$'' 的密度相符 (6 个真迷宫生成器的均值 $M_{\text{wall}}=0.487$ 落在
 峰值中点)。把这一比例纳入聚合,等价于告诉 ES ``你要接近这个密度才有奖励''
 而非 ``必须落在一条线上''。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.96\linewidth]{../figures/v2/fig_mq_calculation_v3.png}
+\caption{\textbf{maze\_quality 计算流程。}
+8 个连续可微子度量 (左侧 5 个拓扑 + 右侧 3 个多样性) 分别做加权几何聚合
+得到 $M_{\text{topology}}$ (红) 与 $M_{\text{diversity}}$ (黄);
+两侧 $\min$-平衡后乘以 $[0.40,\,0.60]$ 上的三角门控
+$M_{\text{wall\_gate}}$ (棕, 峰值 1),
+得到 final score $\in [0,1]$。
+所有算子连续可微, ES 可学; $\min$ 强制 ``topology 与 diversity 同步提升''。
+}
+\label{fig:mq-calc}
+\end{figure}
 
 \begin{figure}[H]
 \centering
