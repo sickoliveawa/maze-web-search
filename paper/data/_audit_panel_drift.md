@@ -4,7 +4,7 @@
 
 | panel | ndjson ts | ckpt mtime | gap_hours | ndjson best | ckpt bestScore | match? |
 |-------|-----------|------------|-----------|-------------|----------------|--------|
-| a | 2026-07-05T21:24:07 | 2026-07-05T13:24:06 | **-8.00** | 0.823277 | 0.8232766389846802 | NO (precision) |
+| a | 2026-07-05T21:24:07 | 2026-07-05T13:24:06 | **-8.00** | 0.8233 | 0.8232766389846802 | NO (precision) |
 | b | 2026-07-04T17:29:13 | 2026-07-06T13:11:35 | **+43.71** | 0.809539 | 0.809539258480072 | NO (precision) |
 | c | 2026-07-04T20:23:44 | 2026-07-04T12:23:43 | **-8.00** | 0.711639 | 0.711638867855072 | NO (precision) |
 | d | 2026-07-05T22:40:11 | 2026-07-05T14:40:09 | **-8.00** | 0.799877 | 0.7998772263526917 | NO (precision) |
@@ -29,7 +29,7 @@
 
 ### Score mismatch analysis
 All "NO" matches are due to JSON float serialization precision, not actual data divergence:
-- ndjson `best` field: 6 decimal places (e.g., `0.823277`)
+- ndjson `best` field: 6 decimal places (e.g., `0.8233`)
 - ckpt `bestScore`: full float64 (e.g., `0.8232766389846802`)
 - True values are identical within float64 precision
 

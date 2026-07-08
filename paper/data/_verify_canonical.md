@@ -1,6 +1,6 @@
 # Canonical Numbers for Paper v1.3.0
 
-_Generated: 2026-07-08T19:22:40.625435_
+_Generated: 2026-07-08T19:28:15.093277_
 
 _Sources: sweep_2026_07_08_big\results.ndjson, sweep_2026_07_08\results.ndjson, sweep_2026_07_04\results.ndjson, mini_sweep_2026_07_07\results.ndjson, ckpt/*.json, paper/data/sweep_summary.json_
 
@@ -10,7 +10,7 @@ _Sources: sweep_2026_07_08_big\results.ndjson, sweep_2026_07_08\results.ndjson, 
 - **big_sweep status**: PARTIAL: 2/5 runs complete (s444, s1111), s2222 in progress (~30% done), s3333/s6666 pending
 - **big_sweep n_complete**: 2
 - **big_sweep top score**: 0.8195 (config: {'mask': 'manhattan-2', 'maxFam': 8, 'seed': 444})
-- **old 128-run top score**: 0.823277 (config: {'mask': 'manhattan-2', 'maxFam': 8, 'seed': 444})
+- **old 128-run top score**: 0.8233 (config: {'mask': 'manhattan-2', 'maxFam': 8, 'seed': 444})
 - **chromosome bits/family**: 103 = 1 (active) + 80 (cells mask) + 9 (birth) + 9 (survive) + 4 (priority) = 103 bits
 - **search space**: 2^103 (single family); 2^1648 (full 16-family chromosome)
 
@@ -44,7 +44,7 @@ _Sources: sweep_2026_07_08_big\results.ndjson, sweep_2026_07_08\results.ndjson, 
 - true mazes: mean=100.882
 - pseudo mazes: mean=292.205
 - gap: -191.323 (negative = Bellot F underrates true mazes)
-- misclassifications: 2/9 pseudo (Spiral F=11.85 vs DFS F=15.33 — Bellot F underrates DFS)
+- misclassifications: 4/9 pseudo (Spiral F=11.85 + 3× F=0 patterns ranked as most maze-like)
 
 ## big_sweep per-run
 
@@ -56,5 +56,5 @@ _Sources: sweep_2026_07_08_big\results.ndjson, sweep_2026_07_08\results.ndjson, 
 ## ckpt top scores
 
 - big_manhattan-2_mf8_s1111.json: bestScore=0.8138289451599121, gen=2000
-- big_manhattan-2_mf8_s2222.json: bestScore=0.7664309740066528, gen=650
+- big_manhattan-2_mf8_s2222.json: bestScore=0.7664309740066528, gen=850
 - big_manhattan-2_mf8_s444.json: bestScore=0.8195065855979919, gen=2000

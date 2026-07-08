@@ -1,4 +1,4 @@
-% 06-discussion.tex — 讨论 (v1.3.0, big_sweep)
+% 06-discussion.tex — 讨论
 
 \section{讨论}
 \label{sec:discussion}
@@ -28,7 +28,7 @@ mf=1→mf=2→mf=4→mf=8 时,均值从 0.6984 下降至 0.6306,
 \subsection{两类失败模式的机制分离}
 \label{sec:fail-modes}
 
-第 §5.4 节的消融数据将失败模式清晰分为两类,机制截然不同:
+第 §5.4 节的消融数据将失败模式清晰分为两类,机制不同:
 
 \noindent\textbf{(1) 预算受限型 (chebyshev-4, 0.1573)。}
 chebyshev-4 邻域严格包含 chebyshev-2,
@@ -76,8 +76,7 @@ manhattan-1 是 4-邻域,每个元胞每步最多感知 4 个邻居;
         误判 0/9 (阈值 0.5)
   \item \textbf{Bellot $F$:} 真迷宫均值 100.882,伪迷宫均值 292.205,
         间隔 $-191.323$ (方向反转!);
-        误判 2/9: Spiral ($F=11.85$) < DFS ($F=15.33$) ---
-        Bellot $F$ 判定 ``Spiral 比 DFS 更像迷宫''
+        misclassifications: 4/9: Spiral ($F=11.85$) 与 3 个 F=0 pattern (Horizontal Stripes/Concentric Rings/Honeycomb) 均被 Bellot $F$ 判为比真迷宫更像迷宫
 \end{itemize}
 
 Bellot $F = \nu/\delta$ 失败的结构性原因:
@@ -129,17 +128,10 @@ big\_sweep 峰值是否会显著超过 0.8233?
 \subsection{局限与未来工作}
 \label{sec:limitations}
 
-\begin{enumerate}[leftmargin=*, itemsep=0pt, topsep=0pt]
-  \item $maze\_quality$ 的子度量权重 (如 $M_c=0.40$, $M_t=0.50$) 由经验决定,
-        理论上可通过元学习自动调优,但本文未涉及。
-  \item 15-pattern 数据集虽覆盖常见几何反例,仍非完备;
-        未来可加入分形迷宫、Hilbert 曲线等拓扑反例。
-  \item ES 种群规模受 WebGPU dispatch 单次调用预算限制,
-        $200\times500$ 已是浏览器端合理上限;
-        若部署到服务器端 GPU,可尝试更大 pop×gens,
-        可能把 0.8233 继续上推。
-  \item FamilyMask 当前用 ``按优先级顺序遍历'' 执行 CA 步,
-        等价于 ``首个触发的族即决定下一态''。
-        这种 ``早退'' 语义在非 ordered ``多族投票'' 或
-        ``多族加权和'' 推广时需重新设计。
-\end{enumerate}
+maze\_quality 的子度量权重 (如 $M_c=0.40$, $M_t=0.50$) 由经验决定,
+理论上可通过元学习自动调优,但本文未涉及。
+15-pattern 数据集虽覆盖常见几何反例,仍非完备;可加入分形迷宫、Hilbert 曲线等拓扑反例。
+ES 种群规模受 WebGPU dispatch 单次调用预算限制,$200\times500$ 已是浏览器端合理上限;
+若部署到服务器端 GPU,可尝试更大 pop$\times$gens,可能把 0.8233 继续上推。
+FamilyMask 当前用 ``按优先级顺序遍历'' 执行 CA 步,等价于 ``首个触发的族即决定下一态'';
+这种 ``早退'' 语义在非 ordered ``多族投票'' 或 ``多族加权和'' 推广时需重新设计。

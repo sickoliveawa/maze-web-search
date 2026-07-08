@@ -1,4 +1,4 @@
-% 07-conclusion.tex — 结论 (v1.3.0, big_sweep)
+% 07-conclusion.tex — 结论
 
 \section{结论}
 \label{sec:conclusion}
@@ -15,8 +15,8 @@ FamilyMask 把经典 B/S 型规则推广为最多 16 族并行、按优先级仲
 maze\_quality 用 8 维连续可微子度量 + 两层 $\min$-聚合 + 墙比软门控,
 在 15-pattern 基准的 9 个伪迷宫反例上全部得分 0,
 在 6 个真迷宫生成器上均值 0.711,间隔 +0.711,误判 0/9。
-对同一数据集,Bellot 2021 $F=\nu/\delta$ 真伪间隔 $-191.3$,且 2/9 伪迷宫
-(Spiral $F=11.85$ < DFS $F=15.33$) 排名方向反转 ---
+对同一数据集,Bellot 2021 $F=\nu/\delta$ 真伪间隔 $-191.3$,且 4/9 伪迷宫
+(Spiral $F=11.85$ 与 3 个 $F=0$ 图案) 排名方向反转 ---
 即 Bellot $F$ 判定 ``Spiral 比 DFS 更像迷宫'',这是其 smoking gun。
 
 \noindent\textbf{演化结果.}
@@ -32,17 +32,11 @@ mf=8 的均值 (0.6306) 差于 mf=1 (0.6984),
 从消融数据中清晰分离出:
 (1) 预算受限型 (chebyshev-4, 0.1573): $2^{103}$ 搜索空间 vs $10^5$ 预算,高维无梯度平台;
 (2) 表征受限型 (manhattan-1, 0.4205): 4 邻域无法稳定涌现走廊结构。
-二者机制截然不同,混为一谈会导致错误的调参方向。
+二者分属不同类别,混淆会误导调参方向。
 
-\noindent\textbf{v1.3.1 展望.}
-big\_sweep 尚有 3/5 run 未完成 (s2222 约 30\% 进度,s3333/s6666 待启动)。
-当全部 5 run 完成后,若出现配置超越 0.8233,将发布 v1.3.1 hotfix。
-当前 v1.3.0 的数值声明均基于已验证的 ndjson 数据,
-不依赖未完成 run 的估计值。
-
-\medskip\noindent\textbf{数据与代码可用性.}
+\medskip\bigskip\noindent\textbf{数据与代码可用性.}
 所有代码 (maze-web 浏览器端 ES + WebGPU compute shader + 15-pattern 测试集)、
-训练日志 (sweep ndjson, 122 ok + 6 timeout + big\_sweep 2/5)、
+  训练日志 (sweep ndjson, 122 ok + 6 timeout + big\_sweep 2/5)、
 截图 (figures/v2/) 均随论文开源。
 数值来源:旧 sweep \texttt{sweep\_2026\_07\_04/results.ndjson},
 big\_sweep \texttt{sweep\_2026\_07\_08\_big/results.ndjson}。

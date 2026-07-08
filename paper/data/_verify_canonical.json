@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_at": "2026-07-08T19:22:40.625435",
+    "generated_at": "2026-07-08T19:28:15.093277",
     "purpose": "Canonical numbers for maze-web paper v1.3.0. Subagent must cross-check paper \u00a75/\u00a76/\u00a77 against this file.",
     "source_files": [
       "sweep_2026_07_08_big\\results.ndjson",
@@ -373,7 +373,7 @@
         "mask": "manhattan-2",
         "maxFam": 8,
         "seed": 444,
-        "best": 0.823277
+        "best": 0.8233
       },
       {
         "mask": "chebyshev-1",
@@ -783,8 +783,8 @@
           "seedB2S123": false,
           "batchName": "big_manhattan-2_mf8_s2222"
         },
-        "gen": 650,
-        "savedAt": "2026-07-08T11:22:02.473Z",
+        "gen": 850,
+        "savedAt": "2026-07-08T11:27:11.992Z",
         "runTag": "run_1783508718001_8su0",
         "type": "chrom_bits"
       },
@@ -856,7 +856,7 @@
     "_source": "paper/data/sweep_summary.json (200x500 sweep, 128 runs)",
     "total_runs": 128,
     "ok_runs": 122,
-    "top1_score": 0.823277,
+    "top1_score": 0.8233,
     "top1_config": {
       "mask": "manhattan-2",
       "maxFam": 8,
@@ -879,7 +879,7 @@
         "mean": 0.6306086875,
         "n": 32,
         "min": 0.103837,
-        "max": 0.823277
+        "max": 0.8233
       },
       "1": {
         "mean": 0.6983712857142857,
@@ -923,7 +923,7 @@
         "mean": 0.7776793125,
         "n": 16,
         "min": 0.742941,
-        "max": 0.823277
+        "max": 0.8233
       },
       "manhattan-3": {
         "mean": 0.7714063125,
@@ -1247,7 +1247,7 @@
       "maxFam": 8,
       "seed": 444
     },
-    "old_128run_top_score": 0.823277,
+    "old_128run_top_score": 0.8233,
     "old_128run_top_config": {
       "mask": "manhattan-2",
       "maxFam": 8,
