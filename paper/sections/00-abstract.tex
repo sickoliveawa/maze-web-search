@@ -11,7 +11,7 @@
 组合:每族独立持有自己的邻域 mask (固定 $9\times 9$ 中心外 80 格)、
 出生集、存活集与优先级;最多 16 族并行,执行时按优先级顺序遍历,首个匹配的族
 决定下一态。单族时退化为标准 B/S 字符串 ($2^{18}$ 候选),多族时搜索空间跳跃至
-一族 B/S 加一组 mask 的 $2^{103}\approx 2^{824}$ 候选级。
+一族 B/S 加一组 mask 的 $2^{103}$ 候选级 (1 active + 80 cells + 9 B + 9 S + 4 priority = 103 bits,见 \texttt{src/search/rule\_chromosome.js::SLOT\_BITS})。
 
 其二,$\textbf{maze\_quality}$ 八维几何质量度量。它在 $\min(M_{\text{topology}},
 \,M_{\text{diversity}}) \times M_{\text{wall\_gate}}$ 的两层结构上聚合八个连续可微
@@ -43,7 +43,7 @@ compute shader 加速 CA 评估,在 128 次 sweep (8 距离模板 $\times$ 4 族
 统计得到三组可重复观察:(i) 多族容量上限升高反而使均值下降 (mf=1: 0.6984
 $\to$ mf=8: 0.6306),但 mf=8 的尾部拥有 0.8233 全场最高,体现 ``均值降 /
 峰值升'' 的 ``偶发突破'' 现象;(ii) chebyshev-4 模板均值仅 0.157,主因为其
-$9\times 9$ 邻域使搜索空间维度达 $2^{824}$,远大于 $10^5$ 次评估预算可跨越
+$9\times 9$ 邻域使单族搜索空间维度达 $2^{103}$,远大于 $10^5$ 次评估预算可跨越
 的初始化-最优距;(iii) manhattan-1 (4 邻域 von Neumann) 模板均值仅 0.420,
 原因是 4 邻域无法为走廊结构提供足够的二阶空间上下文。所有代码、实验数据、
 截图开源。
@@ -89,7 +89,7 @@ $F{=}0$ strip/ring/honeycomb patterns) are ranked BELOW the genuine DFS
 ($F = 15.33$) --- the smoking gun. Three robust observations emerge: (i)~larger family caps lower the mean
 (mf=1: 0.6984 $\to$ mf=8: 0.6306) but raise the upper tail (mf=8 owns the
 overall best 0.8233); (ii)~chebyshev-4's poor mean ($0.157$) is caused by the
-$9\times 9$ neighbourhood implying a $2^{824}$ candidate space far beyond
+the $9\times 9$ neighbourhood implying a $2^{103}$ candidate space (per family) far beyond
 the $\sim\!10^5$ evaluations available to random-init-to-optimum distance;
 (iii)~manhattan-1's poor mean ($0.420$) is caused by the 4-neighbour
 (von~Neumann) topology providing too little spatial context for corridor
