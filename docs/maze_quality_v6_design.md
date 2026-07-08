@@ -211,6 +211,33 @@ spends more compute on the surviving configurations.
 sko 07-08: "**之后单 config 深度搜索再做**" — Phase 2 is deferred
 until Phase 1 results are reviewed and the top configs are confirmed.
 
+### 5.6 sweep_2026_07_09 — Phase 1 actual progress
+
+Started: 2026-07-08 23:53 (runner: `_sweep_runner_2026_07_09.py`)
+Status as of 2026-07-09 02:08 (paused):
+- 27/128 runs done
+- cumulative wall: 133 min (2.22 h)
+- 4 randomSeeds: [114, 514, 1919, 810]
+- v5+v6 weights active
+- ~101 runs remaining → estimated 6-7 h to complete from resume
+
+**Resume command** (when continuing):
+```bash
+cd /e/doro/maze-web
+/c/Users/sicko/AppData/Local/Programs/Python/Python313/python.exe \
+  _sweep_runner_2026_07_09.py
+# Runner has built-in resume: reads results.ndjson, skips done runs
+```
+
+The runner reads `sweep_2026_07_09/results.ndjson` on startup and
+skips any (mask, maxFam, seed) already in the file. No data is lost.
+
+**Expected outcomes** (predicted, not measured):
+- Top score may drop from 0.8233 to ~0.70-0.74 (v5+v6 mTop uncap)
+- Manhattan-2/mf=8 likely still top, but chebyshev-1/mf=8 may rise
+- Fail cases (chebyshev-4, manhattan-1) stay fail
+- ~5-10% TIMEOUT rate expected (mirror of 07-04 sweep)
+
 ## 6. Files changed
 
 | File | Lines | Change |
