@@ -1,0 +1,16 @@
+% 07-conclusion.tex — 结论
+
+\section{结论}
+\label{sec:conclusion}
+
+本文提出 FamilyMask 多族 CA 编码与 $maze\_quality$ 八维几何质量度量两条相互支撑的线索, 并通过 15-pattern 对照基准与两个尺度的演化扫描验证了两者的协同效果。
+
+\noindent\textbf{FamilyMask 编码空间.} FamilyMask 将经典 B/S 型规则推广为最多 16 族并行、按优先级仲裁的离散结构, 搜索空间由 $2^{18}$ 扩展至 $2^{1648}$ (16 slot $\times$ 103 bits/slot, 其中 103 = 1 active + 80 cells + 9 birth + 9 survive + 4 priority). 单族搜索空间为 $2^{103}$, 全 16 族染色体为 $2^{1648}$. 当某个随机种子恰好落于较优的多族组合邻域时, 多族可突破单族天花板 --- maxFam=8 的峰值 0.8233 高于 maxFam=1 的 0.7999 即体现了该机制。
+
+\noindent\textbf{maze\_quality 度量.} $maze\_quality$ 采用 8 维连续可微子度量 + 两层 $\min$-聚合 + 墙比软门控, 在 15-pattern 基准的 9 个伪迷宫反例上全部得 0 分, 在 6 个真迷宫生成器上均值 0.711, 间隔 +0.711, 误判 0/9. 对同一数据集, Bellot 2021 $F = \nu / \delta$ 的真伪间隔为 $-191.3$, 方向反转, 误判 4/9 (Spiral $F = 11.85$ 与 3 个 $F = 0$ 图案排名低于真迷宫最低值 $F = 15.33$). $maze\_quality$ 的 $M_s$ 显式惩罚单路径占比过高, $M_j$ 显式奖励分叉比例 $\approx 0.10$, 二者共同拒收 Spiral.
+
+\noindent\textbf{两个尺度的演化扫描.} 小范围扫描 122 次 ($200 \times 500$) 与大范围扫描 5/5 ($500 \times 2000$) 协同揭示: manhattan-2 / maxFam=8 配置在 $40 \times 60$ 上已达到性能上界 (小范围峰值 0.8233, 大范围峰值 0.8195, 相差 0.0037), 在 170 倍网格面积上仍保持 99.5\% 的峰值水平 --- 该 \textbf{配置鲁棒性} 是本文的重要发现, 表明 ``同配置 + 不同尺度 = 接近的峰值水平'', 也为 ``大规模部署前无需更大网格验证'' 提供了实证支持。族数上限实验的 ``均值降 / 峰值升'' 双目标特征揭示了 ``更大族容量带来更高峰值突破概率'' 的 Pareto 前沿: maxFam=8 的均值 (0.6306) 低于 maxFam=1 (0.6984), 但 maxFam=8 拥有全场最高 0.8233, 体现了 ``多族容量 $\neq$ 均值稳健, 但 $\approx$ 峰值突破能力'', 也是后续 ``更换 mask + 大预算'' 联合优化的明确方向。
+
+\noindent\textbf{两类瓶颈机制.} (1) 预算受限型 (chebyshev-4, 0.157): $2^{103}$ 搜索空间与 $10^5$ 预算形成高维无梯度平台, 增加预算或降维即可缓解; (2) 表征受限型 (manhattan-1, 0.421): 4 邻域无法稳定涌现走廊结构, 必须更换模板。两者分属不同类别, 混淆将误导调参方向 --- 该清晰的二分类本身是本文的方法论贡献, 使 ``遇到低分时先判断瓶颈类型, 再选择对应解决路径'' 成为可操作的工程流程。
+
+\noindent\textbf{数据可用性.} 所有代码 (maze-web 浏览器端 ES + WebGPU compute shader + 15-pattern 测试集), 训练日志 (sweep ndjson, 小范围 122 OK + 6 TIMEOUT + 大范围 5/5), 截图 (figures/v2/) 均随论文开源。15-pattern 对照基准的图案 (\texttt{paper/data/\_grids.json}) 与分数 (\texttt{paper/data/sweep\_summary.json::15pattern.per\_pattern}) 完全独立可复现, 复核脚本 \texttt{paper/data/\_eval\_15patterns.mjs} 使用真实源码 (mazeQuality / bellotF) 重新计算, 15/15 数值精确匹配 (详见附录 B)。

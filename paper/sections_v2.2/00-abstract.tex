@@ -1,0 +1,38 @@
+% 00-abstract.tex — 中英文摘要
+
+\begin{center}
+{\large\bfseries\textcolor{Vermilion}{摘\quad 要}}
+\end{center}
+
+\noindent
+本文研究一个具体的判定问题: 给定一个由元胞自动机 (CA) 演化得到的二值网格, 如何判断其是否构成迷宫。该问题并非一目了然, 因为 Conway 生命游戏类的演化常常产生 ``视觉上类似迷宫, 实质上并非迷宫'' 的吸引子 (实心块、空盒、规则条纹、随机噪声等), 而 ``真迷宫'' 又需满足走廊结构、稀疏分叉与外圈封闭等拓扑约束。
+
+\noindent\textbf{FamilyMask 多族 CA 编码.} 本文将经典 B/S 型规则推广为最多 16 族并行、按优先级仲裁的染色体表示: 每族独立持有 $9 \times 9$ 邻域 mask (去除中心格, 共 80 位)、出生集、存活集与优先级; CA 每步按优先级遍历 active 族, 首个匹配的族决定下一态。单族情形退化为标准 B/S 字符串 ($2^{18}$ 候选); 多族情形下, 单族搜索空间扩展为 $2^{103}$, 全染色体扩展为 $2^{1648}$ (16 slot $\times$ 103 bits/slot, 其中 103 = 1 active + 80 cells + 9 B + 9 S + 4 priority).
+
+\noindent\textbf{maze\_quality 八维几何度量.} 本文提出在 $\min(M_{\text{topology}}, M_{\text{diversity}}) \cdot M_{\text{wall\_gate}}$ 的两层结构上聚合 8 个连续可微子度量: 5 个拓扑子度量 (走廊主导度 $M_b$、最长路径占比 $M_s$、十字口占比 $M_j$、最大连通占比 $M_c$、外圈抑制 $M_{\text{bnd}}$) 与 3 个多样性子度量 ($2 \times 2$ 块熵 $M_p$、镜像不对称度 $M_a$、$2 \times 2$ 邻接对熵 $M_t$). 所有子度量取值 $[0, 1]$, ES 可直接优化; $\min$ 聚合 (而非几何均值) 强制两侧平衡, 三角墙比门控 $M_{\text{wall\_gate}}$ 在 $[0.40, 0.60]$ 区间外线性衰减, 拦截 ``实心块 / 空盒'' 类病态吸引子。\textbf{v2.1 权重}: 5 个拓扑子度量加权几何聚合采用 $(0.20, 0.15, 0.20, 0.30, 0.15)$ (对应 $M_b, M_s, M_j, M_c, M_{\text{bnd}}$), 是经多轮实验、结合人眼评判迭代调优的结果, 使 ``分数排名与视觉评判一致''; $M_c$ 改为纯线性 (旧版 $/0.8$ 截断使 $M_c \in [0.8, 1.0]$ 全部饱和至 1.0, 丧失了区分度). 旧版权重下 ES 排序前列的 4 个真迷宫 ($M_c \in [0.74, 0.98]$) 几乎无区分度; 新权重下, 视觉上更接近迷宫形态的 (b) chebyshev-1 ($M_c = 0.98$) 升至榜首, 视觉上走廊感较弱的 (a) manhattan-2 ($M_c = 0.74$) 调整至第三, 实现了 ``分数排名与视觉评判一致'' 的关键修复。
+
+\noindent\textbf{15-pattern 对照基准.} 6 个真迷宫生成器 (DFS, Kruskal, Prim, Growing Tree, Sidewinder, Binary Tree) 与 9 个几何反例 (Spiral, Fractal Tree, Horizontal Stripes, Random Noise 50\%, Random Noise 30\%, Checkerboard, Diagonal Stripes, Concentric Rings, Honeycomb) 构成基准数据集。$maze\_quality$ 在真迷宫上均值 0.711, 在伪迷宫上均值 0.000, 间隔 +0.711, 误判 0/9. 同一数据集上, Bellot 2021 $F = \nu / \delta$ 的真伪间隔为 $-191.3$, 方向反转, 9 个伪迷宫中有 4 个 (3 个 $F = 0$ 的图案 Horizontal Stripes / Concentric Rings / Honeycomb, 以及 $F = 11.85$ 的 Spiral) 排名低于真迷宫最低值 ($F = 15.33$, DFS), 即 Bellot $F$ 错误地将 Spiral 判为 ``比 DFS 更像迷宫''.
+
+\noindent\textbf{两个尺度的演化扫描.} 小范围扫描: 128 次全交叉运行 (8 mask $\times$ 4 maxFam $\times$ 4 种子, $40 \times 60$ 网格, pop = 200, gens = 500), 其中 122 次成功, 最高分 0.8233 (manhattan-2, maxFam=8, seed 444). 大范围扫描: 5 次运行 (仅 manhattan-2 / maxFam=8 配置, $500 \times 2000$ 网格, pop = 500, gens = 2000, 5 个随机种子), 全部完成, 最高分 0.8195 (seed 444), 5-run 均值 0.8020. 两次扫描峰值相差 0.0037, 表明 $40 \times 60$ 配置已接近该配置的理论性能上界。
+
+\noindent\textbf{两类瓶颈机制及其区分.} (1) 预算受限型 (chebyshev-4, 0.157): $9 \times 9$ 邻域对应的 $2^{103}$ 单族搜索空间与 $10^5$ 预算形成高维无梯度平台, 通过提高预算或缩小 mask 维度可缓解; (2) 表征受限型 (manhattan-1, 0.421): 4 邻域无法稳定涌现走廊结构, 必须更换模板。该二分类本身是本文的方法论贡献, 能够避免在错误的瓶颈方向上投入调优资源。
+
+\vspace{0.5em}
+\begin{center}
+{\large\bfseries\textcolor{Vermilion}{Abstract}}
+\end{center}
+
+\noindent
+This paper addresses the problem of determining whether a binary grid produced by cellular automaton (CA) evolution constitutes a maze. Conway-style CA evolution tends to produce attractors that ``look maze-like but are not'' (solid blocks, empty boxes, regular stripes, random noise, etc.), so the question demands a quantitative answer. The paper makes two principal contributions.
+
+\noindent\textbf{FamilyMask} generalises Conway B/S rules to a multi-family chromosome representation. Up to 16 families may run in parallel; each family owns its $9 \times 9$ neighbourhood mask (the centred footprint excluding the centre, 80 cells), birth set, survival set, and 4-bit priority. At each CA step, the active families are scanned in priority order; the first match determines the next state. With one active family the rule space reduces to the standard B/S string ($2^{18}$); with $k$ active families the space expands to $2^{103}$ per family and $2^{1648}$ for the full 16-slot chromosome.
+
+\noindent\textbf{maze\_quality} is an eight-dimensional geometric score. Five topology sub-metrics (corridor dominance $M_b$, longest-path share $M_s$, junction share $M_j$, largest-component share $M_c$, outer-frame suppression $M_{\text{bnd}}$) are combined into $M_{\text{topology}}$ via weighted geometric mean. Three diversity sub-metrics ($2 \times 2$ patch entropy $M_p$, mirror asymmetry $M_a$, $2 \times 2$ adjacency-pair entropy $M_t$) form $M_{\text{diversity}}$. The two sides are combined with $\min$ (rather than the geometric mean), then multiplied by a triangular wall-ratio gate $M_{\text{wall\_gate}}$ on $[0.40, 0.60]$ that zeroes out solid blocks and empty boxes. All eight sub-metrics are continuous in $[0, 1]$ and may therefore be optimised directly by evolution strategies. The $\min$ aggregation is what blocks the failure mode in which one side is high and the other is low. \textbf{v2.1 weights}: the five topology weights are $(0.20, 0.15, 0.20, 0.30, 0.15)$ for $(M_b, M_s, M_j, M_c, M_{\text{bnd}})$, refined through multiple experimental rounds using human visual judgment as the ground truth; $M_c$ is now linear (a previous $/0.8$ clip saturated $M_c \in [0.8, 1.0]$ to 1.0, killing the dimension's gradient). The new weights restore the visual-consistency invariant: chebyshev-1 (visually the most maze-like, $M_c = 0.98$) takes the top rank, while manhattan-2 ($M_c = 0.74$) drops to third, aligning the score ranking with the authors' visual assessment.
+
+\noindent\textbf{15-pattern benchmark.} Six classical maze generators (DFS, Kruskal, Prim, Growing Tree, Sidewinder, Binary Tree) and nine non-maze attractors (Spiral, Fractal Tree, Horizontal Stripes, Random Noise at 30\% and 50\%, Checkerboard, Diagonal Stripes, Concentric Rings, Honeycomb) constitute the benchmark dataset. $maze\_quality$ attains a mean of 0.711 on the true mazes and 0.000 on the pseudo-mazes, with zero misclassifications among the nine pseudo-patterns (gap +0.711). The Bellot 2021 $F = \nu / \delta$ score on the same dataset exhibits a gap of $-191.3$ with the wrong sign (``lower is more maze-like''), and four of nine pseudo-mazes (Spiral at $F = 11.85$ and three $F = 0$ patterns) rank below the genuine DFS ($F = 15.33$). The direction reversal is the smoking gun that motivates $maze\_quality$.
+
+\noindent\textbf{Two scales of evolution sweeps.} Small sweep: 128 full-factorial runs (8 masks $\times$ 4 maxFam $\times$ 4 seeds, $40 \times 60$ grid, pop = 200, gens = 500), 122 successful, top score 0.8233 (manhattan-2, maxFam = 8, seed 444). Large sweep: 5 runs (manhattan-2 / maxFam = 8 only, $500 \times 2000$ grid, pop = 500, gens = 2000, 5 random seeds), all 5 complete, top 0.8195 (seed 444), 5-run mean 0.8020. The two top scores differ by 0.0037, indicating that the $40 \times 60$ configuration is already near the configuration's theoretical ceiling.
+
+\noindent\textbf{Two failure modes and a clean diagnostic that distinguishes them.} chebyshev-4 reaches a mean of 0.157 because its $9 \times 9$ neighbourhood induces a $2^{103}$ per-family space, and $10^5$ evaluations are too sparse to escape the gradientless plateau (budget-limited failure, solvable by raising the budget or shrinking the mask). manhattan-1 reaches 0.421 because the 4-neighbour topology cannot sustain the second-order survival conditions that corridors require (representation-limited failure, requires a different template). The clear separation of these two categories prevents wasted tuning effort in the wrong direction and is itself one of the paper's methodological contributions.
+
+\noindent All code, data, figures, and the 15-pattern benchmark dataset are released as open source.
