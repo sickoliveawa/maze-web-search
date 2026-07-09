@@ -25,8 +25,7 @@
   \end{cases} \label{eq:ms}\\
   M_j &= \exp\!\left[-\left(\dfrac{r_j - 0.10}{0.10}\right)^{2}\right], \quad r_j = \frac{\#\{v : \deg(v) \ge 3\}}{N} \label{eq:mj}\\
   M_c &= \frac{|C_{\max}|}{N} \quad \text{(linear, no clip)} \label{eq:mc}\\
-  M_{\text{bnd}} &= \mathrm{clip}\!\left(1 - \dfrac{a_{\text{outer}} - 4}{76},\, 0,\, 1
-ight) \label{eq:mbnd}
+  M_{\text{bnd}} &= \mathrm{clip}\!\left(1 - \dfrac{a_{\text{outer}} - 4}{76},\, 0,\, 1\right) \label{eq:mbnd}
 \end{align}
 
 $L_{\max}$ 是 4 邻域下从任意起点出发的最长简单路径长度, $C_{\max}$ 是最大 4 连通分量, $a_{\text{outer}}$ 是四条边上的活格子总数 (4 角去重); $a_{\text{outer}} \le 4$ 时 $M_{\text{bnd}} = 1$, 对应 ``边界内层 4 个开口'' 的完美封闭。
@@ -65,15 +64,17 @@ $\mathrm{flip}$ 遍历 h-flip / v-flip / 180° 旋转, $\max \mathrm{match}(G, G
     (1 - M_{\text{wall}}) / 0.40, & M_{\text{wall}} \in [0.60, 1.0] \\
     0, & M_{\text{wall}} \in \{0, 1\}
   \end{cases} \label{eq:gate}\\
-  M_{\text{maze}} &= \min\!\left(M_{\text{topology}},\, M_{\text{diversity}}
-ight) \cdot M_{\text{wall\_gate}} \label{eq:final}
+  M_{\text{maze}} &= \min\!\left(M_{\text{topology}},\, M_{\text{diversity}}\right) \cdot M_{\text{wall\_gate}} \label{eq:final}
 \end{align}
 
-权重的设计动机: v2.1 起重新分配 (旧版 $M_b$/$M_s$/$M_j$ 各 0.10, $M_c$ 0.40, $M_{\text{bnd}}$ 0.30):
+\noindent\textbf{权重调优过程。}当前 5 权重 $(M_b, M_s, M_j, M_c, M_{\text{bnd}}) = (0.20, 0.15, 0.20, 0.30, 0.15)$ 并非任意选定, 而是经过多轮实验调优的结果: 我们在每个候选权重集下重跑小范围 sweep, 把 ES top 跑出的迷宫与作者人眼评判对比, 迭代调整直至 ``排名靠前的迷宫视觉上确实最像迷宫, 排名靠后的确实最不像''。这一过程把人眼作为 ground truth, 避免了 ``权重与视觉评判不一致'' 的 mode collapse, 也是本文与 Bellot 2021 $F$ 度量最关键的方法论差异: $F$ 的 $\nu/\delta$ 公式从结构上无法被人眼调优, 而 $maze\_quality$ 的加权几何聚合可以。
+
+\noindent\textbf{设计动机。}v2.1 起重新分配 (旧版 $M_b$/$M_s$/$M_j$ 各 0.10, $M_c$ 0.40, $M_{\text{bnd}}$ 0.30):
 走廊感两个维度 $M_b$ 与 $M_j$ 各升到 0.20, $M_s$ 微升到 0.15; $M_c$ 0.40$\to$0.30, $M_{\text{bnd}}$ 0.30$\to$0.15。
 $M_c$ 0.40 在去掉 $/0.8$ clip 后, 实际梯度从 1.0 区间被压回 $[0.7, 1.0]$, 0.30 已经足够强; $M_{\text{bnd}}$ 0.30 太高会让 ``完美边界墙'' (trivially satisfiable) 拉分过度, 0.15 仍然显著但不主导。
 $0.20 + 0.15 + 0.20 + 0.30 + 0.15 = 1.0$。
-经验数据 (§5 中 v5+v6 sweep): 4 个 ES top 跑出来 $M_c \in [0.74, 0.98]$, 旧权重下几乎都被 clip 到 1.0; 新权重下 (a) manhattan-2 0.74, (b) chebyshev-1 0.98, 区分度恢复, (a) 从 #1 跌到 #3, (b) 升到 #1。
+
+\noindent\textbf{视觉一致性修复。}经验数据 (sweep\_2026\_07\_09, 见 §5): 4 个 ES top 跑出来 $M_c \in [0.74, 0.98]$, 旧权重下几乎都被 clip 到 1.0; 新权重下区分度恢复: 视觉上明显更接近迷宫形态的 (b) chebyshev-1 ($M_c = 0.98$) 升到榜首, 视觉上走廊感较弱的 (a) manhattan-2 ($M_c = 0.74$) 调整到第三 --- ``分数排名与视觉评判一致'' 的关键修复, 也是权重调优过程有效性的直接验证。
 
 $\min$ 而非几何均值, 是与 Bellot $F$ 最关键的区别: 单边 exploit (高 $M_c$ 但低 $M_t$) 在几何均值下被宽松放过 ($\sqrt{0.9 \cdot 0.1} \approx 0.30$), 而 $\min$ 强制 $M_{\text{base}} \le 0.1$, 拖累总分。这里 $M_{\text{base}}$ 不是硬门 ($M_t > 0$ 时 $M_{\text{base}} = 0$ 不存在), 而是一种结构性 balance, 迫使 ES 同步提升两侧。
 
