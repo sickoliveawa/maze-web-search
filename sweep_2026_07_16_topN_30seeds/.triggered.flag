@@ -1,0 +1,6 @@
+triggered at 2026-07-16T11:20:02.693566
+top configs: [('manhattan-2', 2, 0.7904), ('manhattan-2', 8, 0.7753), ('manhattan-2', 4, 0.7715)]
+seeds: 0..29 (30 per config)
+pop/gens: 200/300
+total configs: 90
+runner pid: 24736
