@@ -87,10 +87,10 @@ INPUTS = [
 # Then final score
 
 ax.clear()
-ax.set_xlim(0, 14)
+ax.set_xlim(0, 16)
 ax.set_ylim(0, 8)
 ax.axis("off")
-ax.text(7, 7.5, "Fig 4 — maze_quality 8-Dim Calculation Flow",
+ax.text(7, 7.5, "Fig 4 — maze_quality 10-Dim Calculation Flow",
         ha="center", va="center", fontsize=14, fontweight="bold", color=COL["vermilion"])
 
 # === Column A: 5 topology sub-metrics (left top) ===
@@ -109,17 +109,13 @@ for sym, desc, x, y in topo_metrics:
     ax.text(x + 1.0, y, sym, ha="center", va="center", fontsize=11, color="white", fontweight="bold")
     ax.text(x + 1.0, y - 0.65, desc, ha="center", va="center", fontsize=7, color=COL["ink"], style="italic")
 
-# === Column B: 3 diversity sub-metrics (left bottom) ===
+# === Column B: 5 diversity sub-metrics (right side, v7.1: 3 base + 2 new) ===
 div_metrics = [
-    (r"$M_p$",   "2×2 patch",  0.5, 0.8),
-    (r"$M_a$",   "asymmetry",  0.5, 0.0),
-    (r"$M_t$",   "2×2 adj",    0.5, -0.8),  # off the chart
-]
-# Reset diversity on right side instead
-div_metrics = [
-    (r"$M_p$",   "2×2 patch",  5.5, 5.8),
-    (r"$M_a$",   "asymmetry",  5.5, 4.8),
-    (r"$M_t$",   "2×2 adj",    5.5, 3.8),
+    (r"$M_p$",     "2×2 patch",         8.5, 5.8),  # v6 base
+    (r"$M_a$",     "asymmetry",         8.5, 4.8),  # v6 base
+    (r"$M_t$",     "2×2 adj",           8.5, 3.8),  # v6 base
+    (r"$M_{pu}$",  "4×4 patch unique",  8.5, 2.8),  # v7 new
+    (r"$M_{r95}$", "run length p95",    8.5, 1.8),  # v7 new
 ]
 for sym, desc, x, y in div_metrics:
     box = FancyBboxPatch((x, y - 0.35), 2.0, 0.7,
@@ -140,24 +136,24 @@ ax.text(4.2, 4.0, r"$M_{topology}$",
 ax.text(4.2, 3.55, "5-dim weighted\ngeometric mean",
         ha="center", va="center", fontsize=7, color="white", style="italic")
 
-# M_diversity (from 3)
-box2 = FancyBboxPatch((8.2, 3.3), 2.0, 1.4,
+# M_diversity (from 5; v7.1: 3 base + 2 new)
+box2 = FancyBboxPatch((11.2, 3.3), 2.0, 1.4,
                      boxstyle="round,pad=0.04",
                      facecolor=COL["ochre"], edgecolor=COL["ink"], alpha=0.9, linewidth=1.0)
 ax.add_patch(box2)
-ax.text(9.2, 4.0, r"$M_{diversity}$",
+ax.text(12.2, 4.0, r"$M_{diversity}$",
         ha="center", va="center", fontsize=13, color="white", fontweight="bold")
-ax.text(9.2, 3.55, "3-dim weighted\ngeometric mean",
+ax.text(12.2, 3.55, "5-dim weighted\ngeom. mean (v7.1)",
         ha="center", va="center", fontsize=7, color="white", style="italic")
 
-# === Arrows: 5 topology → M_topology, 3 diversity → M_diversity ===
+# === Arrows: 5 topology → M_topology, 5 diversity → M_diversity ===
 for sym, desc, x, y in topo_metrics:
     arrow = FancyArrowPatch((x + 2.0, y), (3.2, 4.0),
                             arrowstyle="->", mutation_scale=12,
                             color=COL["ink"], linewidth=0.7, alpha=0.7)
     ax.add_patch(arrow)
 for sym, desc, x, y in div_metrics:
-    arrow = FancyArrowPatch((x + 2.0, y), (8.2, 4.0),
+    arrow = FancyArrowPatch((x, y), (11.2, 4.0),
                             arrowstyle="->", mutation_scale=12,
                             color=COL["ink"], linewidth=0.7, alpha=0.7)
     ax.add_patch(arrow)
@@ -180,46 +176,46 @@ arrow2 = FancyArrowPatch((9.2, 3.3), (6.7, 2.3),
                         color=COL["ochre"], linewidth=1.2, alpha=0.85)
 ax.add_patch(arrow2)
 
-# === M_wall_gate (separate input) ===
-wall_box = FancyBboxPatch((11.0, 4.0), 2.0, 0.9,
+# === M_wall_gate (separate input, on rightmost column to avoid overlap with M_diversity) ===
+wall_box = FancyBboxPatch((14.5, 3.7), 2.0, 0.9,
                          boxstyle="round,pad=0.04",
                          facecolor=COL["ash"], edgecolor=COL["ink"], alpha=0.9)
 ax.add_patch(wall_box)
-ax.text(12.0, 4.65, r"$M_{wall\_gate}$", ha="center", va="center", fontsize=11, color="white", fontweight="bold")
-ax.text(12.0, 4.2, "soft triangle on\n[0.40, 0.60]",
+ax.text(15.5, 4.35, r"$M_{wall\_gate}$", ha="center", va="center", fontsize=11, color="white", fontweight="bold")
+ax.text(15.5, 3.9, "soft triangle on\n[0.40, 0.60]",
         ha="center", va="center", fontsize=7, color="white", style="italic")
 
-# === Final score ===
-final_box = FancyBboxPatch((5.3, -0.2), 2.8, 1.1,
+# === Final score (centered between topo + diversity aggregates) ===
+final_box = FancyBboxPatch((6.6, -0.2), 3.2, 1.1,
                           boxstyle="round,pad=0.06",
                           facecolor=COL["vermilion"], edgecolor=COL["ink"], alpha=0.95, linewidth=1.5)
 ax.add_patch(final_box)
-ax.text(6.7, 0.55, r"$M = \min(M_{topo}, M_{div}) \times M_{wall\_gate}$",
+ax.text(8.2, 0.55, r"$M = \min(M_{topo}, M_{div}) \times M_{wall\_gate}$",
         ha="center", va="center", fontsize=11, color="white", fontweight="bold")
-ax.text(6.7, 0.05, "final maze_quality score, in [0, 1]",
+ax.text(8.2, 0.05, "final maze_quality score, in [0, 1]",
         ha="center", va="center", fontsize=8, color="white", style="italic")
 
 # Arrows to final
-arrow3 = FancyArrowPatch((6.2, 1.5), (6.2, 0.9),
+arrow3 = FancyArrowPatch((7.7, 1.5), (8.2, 0.9),
                         arrowstyle="->", mutation_scale=18,
                         color=COL["ink"], linewidth=1.5)
 ax.add_patch(arrow3)
-arrow4 = FancyArrowPatch((12.0, 4.0), (7.5, 0.9),
+arrow4 = FancyArrowPatch((15.5, 3.7), (9.0, 0.9),
                         arrowstyle="->", mutation_scale=18,
                         color=COL["ash"], linewidth=1.5)
 ax.add_patch(arrow4)
 
-# Wall-ratio input box (small)
-ax.text(12.0, 5.4, "input: $w$ = wall ratio\n(= 1 − roadFrac)",
+# Wall-ratio input box (small, above wall_box)
+ax.text(15.5, 5.1, "input: $w$ = wall ratio\n(= 1 − roadFrac)",
         ha="center", va="center", fontsize=8, color=COL["ink"], style="italic")
-arrow_w = FancyArrowPatch((12.0, 5.1), (12.0, 4.9),
+arrow_w = FancyArrowPatch((15.5, 4.8), (15.5, 4.6),
                          arrowstyle="->", mutation_scale=10,
                          color=COL["ink"], linewidth=0.8)
 ax.add_patch(arrow_w)
 
 # Bottom: legend
-ax.text(7, -1.0,
-        "Inputs: 8 sub-metrics in [0,1]  →  2 aggregates  →  min-balance  →  × wall gate  →  final score ∈ [0,1]",
+ax.text(8, -1.0,
+        "Inputs: 10 sub-metrics in [0,1]  →  2 aggregates  →  min-balance  →  × wall gate  →  final score ∈ [0,1]",
         ha="center", va="center", fontsize=9, color=COL["ink"], style="italic",
         bbox=dict(boxstyle="round,pad=0.3", facecolor=COL["paper"], edgecolor=COL["ink"], linewidth=0.6))
 

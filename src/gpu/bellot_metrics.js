@@ -550,49 +550,72 @@ export function bellotNuM(gridData, width, height) {
   };
 }
 
-// ============ Bellot F(M) = ν(M) / δ(M) (Bellot §3.4) ============
+// ============ Bellot F(M) = ν(M) / δ(M) (Bellot 2021 §3.4, Table 1) ============
+//
+// Bellot 2021 Table 1 (40×40 mazes, 1000 random seeds per algorithm):
+//   Algos   NSW    D       F=NSW/D
+//   RB     635.3  31.74    20.33
+//   K      844.5  33.87    25.41
+//   P      868.6  25.13    35.22
+//   ...
+//   GT    1521.0   3.13   485.0
+//
+// where:
+//   ν(M) = NSW = number of non-significant walls (paper §3.4)
+//   δ(M) = McClendon difficulty (paper §3.2) = log(γ(B₀)·∏ᵢ(γ(Bᵢ)+1))
+//   γ(h) = D(h)·Σ_{k=2..D-1} 1/(2·d_c,k)  (per-hallway complexity)
+//
+// F = NSW / δ. Smaller F = more fun (true mazes are fun to solve, their
+// NSW is small relative to their difficulty). Bigger F = more boring
+// (very tree-like, NSW dominates because solution path is the only choice).
+//
+// NOTE (cell-based vs wall-based): paper counts NSW on the wall graph
+// (each wall is a binary variable on edges between cells). Our
+// implementation counts NSW on the cell graph (each cell is a binary
+// variable). Same algorithm topology, but NSW scale is different.
+// For ranking purposes (true mazes vs pseudo mazes), ranking is preserved.
+// For absolute values, the cell-based numbers are smaller by ~2× because
+// the cell graph has fewer nodes than the wall graph on the same grid.
 
 /**
- * Bellot F(M) — Fun measure (Bellot 2021 §3.4)
- /**
-  * Bellot F(M) = ν(M) / δ(M) (Bellot 2021 §3.4)
-  *
-  * 注意: paper 给出 F=ν/δ, paper Table 4 RB=20.33, GT=485
-  * 我们 cell-based 实现:
-  *   - ν(M) count 数 ≈ paper 的 1/2 (cell-based vs wall-based)
-  *   - δ(M) 用 twistiness proxy = diameter/diagonal
-  *     (paper 用 McClendon δ 公式, cell-based 实现数值偏大)
-  *
-  * Ranking 一致 (Spearman ρ), 数值 scale 不同.
-  */
- export function bellotF(gridData, width, height) {
-   const nu = bellotNuM(gridData, width, height);
-   const mcl = mclendonDifficulty(gridData, width, height);
-   const diameter = longestPathLength(gridData, width, height);
-   const diagonal = Math.sqrt(width * width + height * height);
-   const twistiness = diameter / Math.max(1, diagonal);  // 真迷宫 = 8+, 涌现 blob = 1-2
-     const safeTwistiness = isFinite(twistiness) ? twistiness : 0;
+ * Bellot F(M) = ν(M) / δ(M) (Bellot 2021 §3.4)
+ *
+ * Faithful to the paper formula:
+ *   - ν(M) = NSW (paper's non-significant walls, our cell-based count)
+ *   - δ(M) = McClendon difficulty (per Bellot §3.2 = McClendon 2001)
+ *
+ * If mcl.delta is 0 (e.g. single-cell grid, no branches), fall back to
+ * a small ε to avoid division by zero. This is defensive; in practice
+ * every maze with at least 2 cells has δ > 0.
+ */
+export function bellotF(gridData, width, height) {
+  const nu = bellotNuM(gridData, width, height);
+  const mcl = mclendonDifficulty(gridData, width, height);
+  const diameter = longestPathLength(gridData, width, height);
 
-     // Bellot δ proxy: 用 twistiness (符合 Bellot 论文精神, 实现更稳)
-     // 真迷宫 (RB): twistiness = 8+, F = nu/twistiness 小 → fun
-     // 涌现 (GT): twistiness = 1-2, F = nu/twistiness 大 → not fun
-     // 不连通 maze: twistiness = 0 → cap to 0.5, F 大 → score 低 (正确行为)
-     const delta = Math.max(0.5, safeTwistiness);
-   const F = nu.count / delta;
+  // δ = McClendon difficulty. Floor to 1.0 to avoid extreme F values
+  // when δ→0 (e.g. patterns with no real hallway/branch structure such
+  // as Fractal Tree, Checkerboard, Diagonal Stripes). The paper only
+  // applies F to perfect mazes where δ is always positive; we extend
+  // it to the 15-pattern dataset which includes these degenerate
+  // cases, and the floor keeps them on a comparable numerical scale.
+  const delta = mcl.delta > 1.0 ? mcl.delta : 1.0;
 
-   return {
-     F,
-     nuCount: nu.count,
-     nuRatio: nu.ratio,
-     deltaM: mcl.delta,
-     deltaProxy: twistiness,  // 简化 δ proxy (twistiness)
-     gammaM: mcl.gammaM,
-     maxGamma: mcl.maxGamma,
-     avgGamma: mcl.avgGamma,
-     branches: mcl.branches,
-     diameter,
-   };
- }
+  const F = nu.count / delta;
+
+  return {
+    F,
+    nuCount: nu.count,
+    nuRatio: nu.ratio,
+    deltaM: mcl.delta,           // McClendon δ (paper-faithful)
+    deltaProxy: mcl.delta,       // alias for backward compat
+    gammaM: mcl.gammaM,          // McClendon γ(M) = log(Σ γ(Bᵢ))
+    maxGamma: mcl.maxGamma,
+    avgGamma: mcl.avgGamma,
+    branches: mcl.branches,
+    diameter,
+  };
+}
 
 // ============ GA fitness score (transform F → score) ============
 
@@ -671,7 +694,7 @@ export function bellotScore(gridData, width, height, opts = {}) {
   }
 
   // ✅ FIX v9.5 (sko 06-27): BLOB hard gate
-  //   BLOB (大块连通) 拿高分是因为 Bellot F=nu/twistiness 看起来像 maze,
+  //   BLOB (大块连通) 拿高分是因为 Bellot F=ν/δ 在 BLOB 上数值看起来像 maze,
   //   但 Buck crossroad 占 60%+ (BLOB 特征), corridor+turn 几乎为 0
   //   真 maze: corridor+turn 应该 > 50% of road cells, crossroad < 5%
   //   BLOB: corridor+turn ≈ 5-15% of road cells, crossroad 50%+
@@ -904,7 +927,7 @@ export function bellotScore(gridData, width, height, opts = {}) {
       nuCount: f.nuCount,
       nuRatio: f.nuRatio,
       deltaM: f.deltaM,
-      deltaProxy: f.deltaProxy,  // twistiness = diameter/diagonal
+      deltaProxy: f.deltaProxy,  // McClendon δ (= log of complexity product)
       gammaM: f.gammaM,
       maxGamma: f.maxGamma,
       avgGamma: f.avgGamma,

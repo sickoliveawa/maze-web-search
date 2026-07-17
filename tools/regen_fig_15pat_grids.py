@@ -35,14 +35,24 @@ import numpy as np
 # --- Paths ---
 ROOT = Path(__file__).resolve().parent.parent
 GRID_FILE = ROOT / "paper" / "data" / "_grids.json"
-SCORE_FILE = ROOT / "paper" / "data" / "sweep_summary.json"
-OUT_DIR = ROOT / "figures" / "v2"
+SCORE_FILE = ROOT / "paper" / "data" / "sweep_summary.json"          # v6 (cached, legacy)
+SCORE_FILE_V7 = ROOT / "paper" / "data" / "_15pat_v6_vs_v7.json"      # mq v7.1
+SCORE_FILE_BELLOT_V7 = ROOT / "paper" / "data" / "_15pat_v7_bellot.json"  # Bellot F v7.1 (cell-based McClendon δ)
+OUT_DIR = ROOT / "paper" / "figures" / "v2.4"  # paper 引用的统一路径
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # --- Load data ---
 grids = json.load(open(GRID_FILE, encoding="utf-8"))
 sweep = json.load(open(SCORE_FILE, encoding="utf-8"))
 per_pat = {p["name"]: p for p in sweep["15pattern"]["per_pattern"]}
+
+# v7.1 mq scores
+v7_data = json.load(open(SCORE_FILE_V7, encoding="utf-8"))
+v7_per_pat = {p["gridName"].replace(" (DFS)", ""): p for p in v7_data}
+
+# v7.1 Bellot F (cell-based McClendon δ) — replaces legacy twistiness proxy in sweep_summary.json
+bellot_v7_data = json.load(open(SCORE_FILE_BELLOT_V7, encoding="utf-8"))
+bellot_v7_per_pat = {r["gridName"].replace(" (DFS)", ""): r for r in bellot_v7_data}
 
 TRUE = grids["true"]
 PSEUDO = grids["pseudo"]
@@ -77,13 +87,23 @@ def render_fig(score_key, title, out_path, highlight_low_bellot=False):
         flat = TRUE[name] if name in TRUE else PSEUDO[name]
         img = grid_to_img(flat, grids["W"], grids["H"])
         # Render
-        ax.imshow(img, cmap="gray_r", vmin=0, vmax=1, interpolation="nearest")
+        # cmap="gray" (NOT gray_r): per mq.js::countWalls convention 0=墙, 1=走廊;
+        # we want wall=black (ink), path=white (cream) — that's gray, not gray_r.
+        # (gray_r would invert to wall=white, path=black — wrong for paper.)
+        ax.imshow(img, cmap="gray", vmin=0, vmax=1, interpolation="nearest")
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
             spine.set_visible(False)
         # Label: pattern name + score
-        score = per_pat[per_name(name)][score_key]
+        if score_key == "mq":
+            # Use v7.1 mq score
+            score = v7_per_pat[per_name(name)]["v7"]
+        elif score_key == "bellotF":
+            # Use v7.1 Bellot F (cell-based McClendon δ, replaces legacy twistiness proxy)
+            score = bellot_v7_per_pat[per_name(name)]["bellotF_v7"]
+        else:
+            score = per_pat[per_name(name)][score_key]
         # Type label
         is_true = name in TRUE
         type_lbl = "TRUE" if is_true else "PSEUDO"
@@ -103,6 +123,8 @@ def render_fig(score_key, title, out_path, highlight_low_bellot=False):
         # Compose label
         if score_key == "mq":
             lbl = f"{name}\n{type_lbl}\nmq = {score:.3f}"
+        elif score_key == "bellotF":
+            lbl = f"{name}\n{type_lbl}\nF = {score:.3f}"
         else:
             lbl = f"{name}\n{type_lbl}\nF = {score:.2f}"
         ax.set_xlabel(lbl, fontsize=8, color=color, fontweight=weight)
@@ -127,14 +149,14 @@ def render_fig(score_key, title, out_path, highlight_low_bellot=False):
 print("Generating fig_15pat_grid_mq.png ...")
 render_fig(
     score_key="mq",
-    title="15-pattern benchmark - maze_quality score (TRUE mean 0.711, PSEUDO mean 0.000, gap +0.711)",
+    title="15-pattern benchmark · maze_quality (v7.1)",
     out_path=OUT_DIR / "fig_15pat_grid_mq.png",
 )
 
-print("Generating fig_15pat_grid_bellot.png ...")
+print("Generating fig_15pat_grid_bellot.png (v7.1) ...")
 render_fig(
     score_key="bellotF",
-    title="15-pattern benchmark - Bellot F score (4/9 pseudo misclassified, boxed in vermilion)",
+    title="15-pattern benchmark · Bellot F = ν/δ (v7.1)",
     out_path=OUT_DIR / "fig_15pat_grid_bellot.png",
     highlight_low_bellot=True,
 )

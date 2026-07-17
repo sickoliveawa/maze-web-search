@@ -191,16 +191,88 @@ function mBoundary(gridData, width, height) {
 }
 
 /**
- * M_pattern: 2x2 patch Shannon entropy 归一化
- *   - 16 种 patch, log2(16) = 4
- *   - 真 maze: 0.85-0.95
- *   - stripes: 0.2-0.4
- *   - solid: 0
- *   - 复用 patternComplexity
+ * M_pattern: 2x2 patch Shannon entropy 归一化 + connectedness modulation
+ *   sko 07-14 v7: 加大 connection 权重
+ *     之前只算 2x2 patch 熵, 一个"局部碎片拼成的全图"也能拿到 0.85-0.95
+ *     现在 mPattern = patchEntropy × (0.5 + 0.5 × connectedness)
+ *     connectedness=1.0 → factor=1.0 (不变)
+ *     connectedness=0.5 → factor=0.75 (降 25%)
+ *     connectedness=0.0 → factor=0.5 (降一半, 但通常被 mWR_gate 拒)
+ *   旧版本只 reward 局部多样, 不 reward 全图连通 — 视觉上"看着连环"才加分
+ *   备份: src/metrics/maze_quality.js.bak_2026-07-14_*_pattern_conn_uniq
+ *   - 真 maze: connectedness 0.92+, factor 0.96, mP 几乎不变
+ *   - 碎片 noise: connectedness 0.05, factor 0.525, mP 砍一半
  */
 function mPattern(gridData, width, height) {
   const pc = patternComplexity(gridData, width, height);
-  return pc.patchEntropy;  // 已经在 [0, 1]
+  const mC = mConnectedness(gridData, width, height);
+  return pc.patchEntropy * (0.5 + 0.5 * mC);
+}
+
+/**
+ * M_patch_uniqueness: 4x4 patch hash unique / total patches (sko 07-14 v7)
+ *   局部相似度的反指标 — 高 unique = 局部结构多样; 低 unique = 大量重复 patch
+ *   - 真 maze (DFS / spiral): 0.85-1.00 (rich local structure)
+ *   - mf=2 noise: 0.49 (大量重复小斑块 — sko 视觉观察的根源)
+ *   视觉 ρ = -0.60 (high unique → better maze)
+ *   带宽: 8x15 = 120 patches (40x60 grid); 4x4 hash 16-bit
+ */
+function mPatchUniqueness(gridData, width, height) {
+  const ph = 4, pw = 4;
+  const nh = Math.floor(height / ph), nw = Math.floor(width / pw);
+  if (nh === 0 || nw === 0) return 0;
+  const hashes = new Set();
+  for (let r = 0; r < nh; r++) {
+    for (let c = 0; c < nw; c++) {
+      let h = 0;
+      for (let dy = 0; dy < ph; dy++) {
+        for (let dx = 0; dx < pw; dx++) {
+          const idx = (r * ph + dy) * width + (c * pw + dx);
+          h = (h << 1) | (gridData[idx] > 0 ? 1 : 0);
+        }
+      }
+      hashes.add(h);
+    }
+  }
+  return hashes.size / (nh * nw);
+}
+
+/**
+ * M_run_p95: 95 百分位水平/垂直 run 长度 / 8, clamp [0,1] (sko 07-14 v7)
+ *   长 run = 长走廊 / 大块同色块
+ *   - 真 maze (DFS 走廊): p95 = 6-8 cells, mRunP95 = 0.75-1.0
+ *   - 破碎 noise: p95 = 2-3 cells, mRunP95 = 0.25-0.375
+ *   视觉 ρ = -0.70 (high run_p95 → better maze; 反向:短 run = 视觉糟糕)
+ *   公式: clamp(p95 / 8, 0, 1) — 8 cells 视为 "长走廊" 满分
+ */
+function mRunP95(gridData, width, height) {
+  const lens = [];
+  // horizontal runs
+  for (let y = 0; y < height; y++) {
+    let i = 0;
+    while (i < width) {
+      let j = i;
+      const ref = gridData[y * width + i] > 0 ? 1 : 0;
+      while (j < width && (gridData[y * width + j] > 0 ? 1 : 0) === ref) j++;
+      lens.push(j - i);
+      i = j;
+    }
+  }
+  // vertical runs
+  for (let x = 0; x < width; x++) {
+    let i = 0;
+    while (i < height) {
+      let j = i;
+      const ref = gridData[i * width + x] > 0 ? 1 : 0;
+      while (j < height && (gridData[j * width + x] > 0 ? 1 : 0) === ref) j++;
+      lens.push(j - i);
+      i = j;
+    }
+  }
+  if (lens.length === 0) return 0;
+  lens.sort((a, b) => a - b);
+  const k = Math.floor(0.95 * (lens.length - 1));
+  return Math.max(0, Math.min(1, lens[k] / 8));
 }
 
 /**
@@ -319,6 +391,7 @@ export function mazeQuality(gridData, width, height) {
         M_connectedness_raw: 0,
         M_pattern: 0, M_asymmetry: 0, M_transition: 0,
         M_topology: 0, M_diversity: 0,
+        M_patch_uniqueness: 0, M_run_p95: 0,
       },
     };
   }
@@ -347,13 +420,24 @@ export function mazeQuality(gridData, width, height) {
   //   实测: chebyshev-1/chebyshev-2 升到 #1/#2, manhattan-2 从 #1 跌到 #3
   //         失败案例 (WR_gate 锁住) 排名不变
   //   备份: src/metrics/maze_quality.js.bak_2026-07-08_topology_weight
-  const mTopology = Math.pow(mB, 0.20) * Math.pow(mS, 0.15) * Math.pow(mJ, 0.20) * Math.pow(mC, 0.30) * Math.pow(mBnd, 0.15);
+  const mTopology = Math.pow(mB, 0.20) * Math.pow(mS, 0.10) * Math.pow(mJ, 0.20) * Math.pow(mC, 0.40) * Math.pow(mBnd, 0.10);
 
-  // 3. M_diversity: weighted 3-几何平均 (sko 06-29 v2 — 提升 M_transition 权重)
-  //   v1: 均匀 1/3, M_transition=0.34 被 mA=1.0 拉回到 0.57
-  //   v2: T 权重 0.50 (2x), 0.34 → mDiv 降低, ES 看到梯度
-  //   0.25+0.25+0.50 = 1.0 (归一化)
-  const mDiversity = Math.pow(mP, 0.25) * Math.pow(mA, 0.25) * Math.pow(mT, 0.50);
+  // 3. M_diversity: weighted 5-几何平均 (sko 07-14 v7 — 加入局部相似度 2 项)
+  //   v2 (06-29): P^0.25 A^0.25 T^0.50          — 没有测"局部重复"
+  //   v7 (07-14): P^0.20 A^0.20 T^0.30
+  //              + M_patch_uniqueness^0.15      — 局部 4x4 patch 多样度 (高=好, ρ=-0.60)
+  //              + M_run_p95^0.15               — 长走廊存在度 (高=好, ρ=-0.70)
+  //   总权重 0.20+0.20+0.30+0.15+0.15 = 1.0
+  //   效果: 旧 v2 给 "碎片噪点" 给分;v7 把它拉低 — 跟 sko 视觉一致
+  //   备份: src/metrics/maze_quality.js.bak_2026-07-14_*_pattern_conn_uniq
+  const mPatchUni = mPatchUniqueness(gridData, width, height);
+  const mRun95    = mRunP95(gridData, width, height);
+  const mDiversity =
+      Math.pow(mP, 0.20)
+    * Math.pow(mA, 0.20)
+    * Math.pow(mT, 0.30)
+    * Math.pow(mPatchUni, 0.15)
+    * Math.pow(mRun95,    0.15);
 
   // 4. M_maze: sko 06-29 v3 — min(mTop, mDiv) (代替 sqrt(mTop * mDiv))
   //   原因: geometric mean 允许 "topology 0.69, diversity 0.05 → M_maze 0.19"
@@ -378,6 +462,7 @@ export function mazeQuality(gridData, width, height) {
       M_connectedness_raw: mC_raw,  // same as M_connectedness now, kept for diagnostic
       M_pattern: mP, M_asymmetry: mA, M_transition: mT, M_boundary: mBnd,
       M_topology: mTopology, M_diversity: mDiversity,
+      M_patch_uniqueness: mPatchUni, M_run_p95: mRun95,
       M_wall_ratio: countWalls(gridData) / gridData.length,
       M_WR_gate: m_WR_gate,
     },
