@@ -7,15 +7,14 @@ type: software
 title: maze-web
 abstract: |
   Browser-based dashboard for FamilyMask (multi-family cellular automaton rule
-  encoding) and maze_quality (8-dimensional maze quality metric), with
-  WebGPU-accelerated evolution-strategy training. Includes a 128-run sweep
-  harness, a 15-pattern benchmark, and the LaTeX source for the accompanying
-  paper.
+  encoding) and maze_quality (5+5=10 dimensional maze quality metric), with
+  WebGPU-accelerated evolution-strategy training. Includes a 160-run full-cross
+  sweep harness (8 mask × 5 maxFam × 4 seed), a 15-pattern benchmark suite, the
+  maze_seal post-processing pipeline package, and reproducible checkpoints +
+  ndjson for every run.
 authors:
-  - family-names: Feng
-    given-names: Zhuoyuan
-    alias: sko
-    affiliation: University of Chinese Academy of Sciences
+  - alias: sko
+    affiliation: sko (independent)
 keywords:
   - cellular-automata
   - mazes
@@ -24,4 +23,4 @@ keywords:
   - gpu-compute
   - family-mask
 license: MIT
-repository-code: https://github.com/sko/maze-web
+repository-code: https://github.com/sickoliveawa/maze-web-search
