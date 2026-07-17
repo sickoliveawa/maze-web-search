@@ -1,190 +1,225 @@
 # maze-web
 
-Browser-based dashboard for **FamilyMask** (multi-family CA rule encoding) +
-**maze_quality** (8-dimensional maze quality metric), with WebGPU-accelerated
-evolution-strategy training.
+> Browser WebGPU ES for CA maze rules.
+>
+> 浏览器内 WebGPU 加速的元胞自动机 (CA) 迷宫规则进化搜索。
 
-The accompanying paper is in `paper/main_v1.2.tex` (Chinese with English abstract).
+演化策略 (ES) 跑在 GPU 上, 单条配置中位 6.9 min 出图; 160 run 全交叉扫描 21.92 h 跑完, 最高分 **0.7982** 来自 `manhattan-2 / mf=2 / seed=3`。
 
-## Quickstart
+- **FamilyMask 染色体** — 单族 $2^{103}$, 整条染色体 $2^{1648}$ (16 族并行)
+- **maze_quality** — `[0,1]` 取值的十维标量 (5 拓扑 + 5 多样性 + 三角墙比门控)
+- **Bellot F 复刻** — 同数据集 cell-based, **4/9 误判** (ν=0 类型 sign flip)
 
-```bash
-cd maze-web
-python -m http.server 8087
+---
 
-# open in Edge / Chrome 113+ (WebGPU required):
-#   http://127.0.0.1:8087/index.html
-```
+## 🚀 Quickstart
 
-Optional: run the checkpoint server in a second terminal to persist training
-runs across browser reloads.
+两个 server, 两个 terminal:
 
 ```bash
-python ckpt_server.py     # listens on http://127.0.0.1:8088
+# Terminal 1: dashboard
+python -m http.server 8080
+# → http://localhost:8080/
+
+# Terminal 2: checkpoint server
+python ckpt_server.py
+# → http://127.0.0.1:8088  (saves ckpt across browser reloads)
 ```
 
-## What this repo contains
+需要 **Edge / Chrome 113+** (WebGPU required).
+
+---
+
+## 📦 这是啥 / What's inside
 
 ```
 maze-web/
-├── README.md                ← this file
-├── LICENSE                  ← MIT
-├── CITATION.cff             ← paper citation metadata
-├── index.html               ← single-page dashboard shell
+├── src/                     12 .js + 子目录
+│   ├── core/                CA grid primitives (Rule / Family / Grid / Random)
+│   ├── gpu/                 WebGPU compute shaders + bellot_metrics
+│   ├── metrics/             maze_quality 5+5=10 子度量
+│   ├── search/              ES loop + 1648-bit chromosome
+│   ├── render/              pure-canvas grid renderer
+│   ├── tabs/                4 个 tab (configure / train / best / preview)
+│   └── presets/             15-pattern generators
+│
+├── maze_seal/               standalone Python package — 从网格到迷宫后处理
+│   ├── __init__.py
+│   ├── ga_to_maze.py        BFS 入口 + 贪心拆墙 + path-aware seal
+│   ├── ga_to_maze_io.py
+│   ├── example.py
+│   └── README.md
+│
+├── tools/                   figure regen + paper 验证脚本
+│   ├── regen_figure_mq_calc.py
+│   ├── regen_fig_15pat_grids.py
+│   ├── regen_fig_top_grids.py
+│   ├── regen_fig_sweep_grids_v71.py
+│   ├── regen_figures.py     # 批量 regen
+│   ├── verify_paper_numbers.py
+│   └── PAPER_REGEN_OUTLINE.md
+│
+├── scripts/                 Node helper scripts (MJS)
+│   ├── full_mq_benchmark.mjs
+│   ├── full_mq_v2.mjs
+│   └── compare_mq_v4_vs_pseudo.mjs
+│
+├── ckpt/                    160 ES training checkpoints (6.6 MB)
+│                             only sweep07_14_all_v71_* (v7.1 主扫)
+│
+├── sweep_2026_07_14_all_v71/   160-run full sweep ndjson (5.1 MB)
+│
+├── docs/                    协议文档 (topN 30-seed auto-trigger 等)
+│
+├── index.html               dashboard 入口
+├── ckpt_server.py           ckpt HTTP server
 ├── package.json
-├── ckpt_server.py           ← local HTTP server for training checkpoints
-├── qq_text_sender.py        ← helper for sending files via QQ bot
-│
-├── src/                     ← all browser-side JS
-│   ├── dashboard.js         ← main controller (tab routing)
-│   ├── state.js             ← central app state + pub/sub
-│   ├── storage.js           ← IndexedDB wrapper
-│   ├── ckpt.js              ← checkpoint load/save client
-│   │
-│   ├── core/                ← Rule / Family / Grid / Topology / Random / B/S compat
-│   │   ├── rule.js
-│   │   ├── family.js
-│   │   ├── grid.js
-│   │   ├── topology.js
-│   │   ├── random.js
-│   │   └── bs_compat.js
-│   │
-│   ├── gpu/                 ← WebGPU compute shaders + scorers
-│   │   ├── gpu_engine.js            ← single-rule engine (used by Preview)
-│   │   ├── gpu_engine_batched.js    ← batched engine (1 dispatch = N rules × K seeds)
-│   │   ├── gpu_scorer.js            ← batched scorer (CA + mazeQuality on GPU)
-│   │   └── bellot_metrics.js        ← GPU Bellot F = ν/δ metric
-│   │
-│   ├── metrics/             ← maze-quality + sub-metrics
-│   │   ├── maze_quality.js          ← 8-submetric weighted geometric aggregator
-│   │   ├── connectivity.js
-│   │   ├── symmetry.js
-│   │   └── branch_entropy.js
-│   │
-│   ├── search/              ← ES loop + chromosome encoding
-│   │   ├── es_searcher.js           ← main (μ+λ) ES loop
-│   │   ├── chromosome.js            ← 1648-bit BitArray
-│   │   └── rule_chromosome.js       ← Rule ↔ chromosome encode/decode
-│   │
-│   ├── render/
-│   │   └── grid.js          ← pure-canvas grid renderer
-│   │
-│   ├── tabs/                ← 4 user-facing tabs
-│   │   ├── configure.js     ← full ESConfig form
-│   │   ├── train.js         ← Start/Stop + live progress + log
-│   │   ├── best.js          ← IndexedDB batch list + breakdown
-│   │   └── preview.js       ← preset + step slider + scoring
-│   │
-│   ├── presets/
-│   │   └── presets.js       ← M4 SOTA + DFS + Conway (auto-generated)
-│   │
-│   └── utils/
-│
-├── paper/                   ← LaTeX source + figures for the paper
-│   ├── main_v1.2.tex        ← entry point (xelatex, 2 passes)
-│   ├── main_v1.2.pdf
-│   ├── sections/            ← 8 numbered .tex chapters (00-abstract … 08-appendix)
-│   ├── figures/             ← all PDF + PNG figures (fig_*.{pdf,png}, fig_*_meta.json)
-│   ├── data/                ← sweep summary + reproducibility audit data
-│   ├── tables/
-│   └── _backup/             ← older paper revisions (.bak) — kept for reference
-│
-├── scripts/                 ← Node helper scripts (MJS) for offline CA grid rendering
-│   ├── full_mq_benchmark.mjs     ← 15-pattern benchmark runner
-│   ├── full_mq_v2.mjs            ← v2 benchmark (used for figures)
-│   ├── compare_mq_v4_vs_pseudo.mjs
-│   ├── _gen_grids.mjs
-│   ├── _ca_snapshots.mjs
-│   ├── _top4_cfg.mjs
-│   ├── _verify_best_rule.mjs
-│   └── _debug_inv.mjs
-│
-├── test_*.mjs               ← tiny export / spiral / bench sanity tests
-│
-├── _diag_*.py               ← diagnostic scripts (kept for reference;
-│                                not part of the public API)
-├── _verify_*.py
-├── _sweep_runner_2026_07_04.py     ← runner for the 128-run sweep
-├── _mini_sweep_4configs.py         ← 4-config mini-sweep template
-├── _big_sweep_500x2000.py          ← 500pop×2000gen runner (5 seeds)
-├── _fill_missing_ma1.py            ← fills 6 missing ndjson entries
-├── _paper_v2_verify.py             ← paper claim verification
-├── _paper_claims_verify.py
-└── _test_fill_path.py              ← smoke test for GPU eval path
+├── CITATION.cff
+├── LICENSE                  MIT
+├── GUIDE.md                 算法详述 (中文)
+├── REPRO_REPORT.md          复现报告
+└── README.md                ← 你在读这个
 ```
 
-## Reproducing the headline numbers
+---
 
-### 15-pattern benchmark (maze_quality vs Bellot F)
+## 🎯 复现 / Reproduce
+
+### 跑一个 mini sweep (验证 setup OK)
 
 ```bash
-node scripts/full_mq_benchmark.mjs
-node scripts/compare_mq_v4_vs_pseudo.mjs
-# → produces paper/figures/fig_true_mazes.pdf + fig_pseudo_mazes.pdf
-#   and console output matching Table 1 in paper §4
+# 起 server 后打开 http://localhost:8080/
+# 进 Train tab, 选 chebyshev-1 / mf=1 / 5 generations → Start
+# 几秒后看 Top-1 score
 ```
 
-### 128-run ES sweep (the headline experiment)
+### 验证 top1 ckpt
 
 ```bash
-python _sweep_runner_2026_07_04.py
-# → writes results.ndjson to a sweep_2026_07_04/ dir (gitignored)
-# → each run = 200pop × 500gen on 40×60 grid, 300 CA steps
-# → total wall time ≈ 14 h
+curl -s "http://127.0.0.1:8088/ckpt/load?name=sweep07_14_all_v71_manhattan-2_mf2_s3.json" \
+  | python -c "import json, sys; d=json.loads(sys.stdin.read()); print(f'bestScore={d[\"bestScore\"]:.4f}  mask={d[\"config\"][\"cellMaskType\"]}  mf={d[\"config\"][\"maxFamilies\"]}')"
+# → bestScore=0.7982  mask=manhattan-2  mf=2
 ```
 
-To verify any saved checkpoint against its saved score (sanity test for
-the save → parse → decode → GPU eval chain):
+### 跑 maze_seal 后处理
 
 ```bash
-python _paper_v2_verify.py
-# → loads 6 panel ckpts from sweep, re-evaluates, confirms 1e-8 float match
+cd maze_seal
+python example.py
+# 把任意二值网格 (CA / GAN / 手绘) 转换成符合经典迷宫约定的网格
 ```
 
-### 500pop × 2000gen search (highest-score run)
+---
+
+## 📊 关键数字 / Headline numbers
+
+| 指标 | 值 |
+|---|---|
+| 主扫配置 | 8 mask × 5 mf × 4 seed = 160 run |
+| 累计耗时 | 21.92 h |
+| 最高分 | **0.7982** (manhattan-2 / mf=2 / seed=3) |
+| Top 10 全在 manhattan 系列 | 8× manhattan-2 + 2× manhattan-4 |
+| 跨系列非偶然概率 | p = 0.0007 (超几何) |
+| maze_quality vs 15-pattern | 0/15 误判 |
+| Bellot F vs 15-pattern | **4/9 误判** (cell-based, scale ~20×) |
+
+---
+
+## 🔬 算法核心 / Core algorithm
+
+详见 [GUIDE.md](GUIDE.md).
+
+### FamilyMask 染色体 (§2)
+经典 Conway B/S 字符串只有 $2^{18}$ 种合法规则, 涌现 1-cell 宽长程连通迷宫概率极低. 本文推广到最多 16 族并行的优先级仲裁染色体:
+- 每族独立持有 80 bit cells mask + 9 bit birth + 9 bit survive + 4 bit priority = 103 bit
+- 整条染色体 $2^{1648}$
+- CA 每步按优先级遍历 active 族, 第一个匹配上的族决定下一态
+- 单族情形退化为 B/S 字符串
+
+### maze_quality (§3)
+十维标量, `[0,1]` 取值:
+- **5 拓扑子度量** (权重 0.20/0.10/0.20/0.40/0.10): 走廊 / 扩散 / 路口 / 连通性 / 外圈
+- **5 多样性子度量** (权重 0.20/0.20/0.30/0.15/0.15): 局部块 / 自对称 / 邻接对 / 块唯一性 / 长段占比
+- 两侧加权几何聚合 → `min` 强制平衡 → 乘以 `[0.40, 0.60]` 三角墙比门控
+
+### 瓶颈 (§6)
+两类互不依赖的失败模式:
+- **预算受限** — 偶发高分表明搜索空间表征充分, 瓶颈在评估预算被某个维度吸收
+  - 变体 A: 大邻域 (chebyshev-4, 均值 0.2193, 偶发 0.7578)
+  - 变体 B: 多族 cap (mf=16, 名义 16 族实际平均仅 6.91 族)
+- **表征受限** (manhattan-1) — 4 cells 邻域最高仅 0.5140, 走廊结构无法涌现, 换 mask 模板即可解决
+
+---
+
+## 🌐 Paper
+
+`paper/` 目录**不在这个 repo** — LaTeX 源码 + sections + figures + build artifacts 都跟 repo 分开发布. 最新的正式版是 **v2.5** (9 节, 27 页, 2026-07-17).
+
+如果你要看 paper, 直接联系作者. repo 里能跑通的部分:
+- `ckpt/` — 160 个 top result per config (reviewer 可复现 headline table)
+- `sweep_2026_07_14_all_v71/results.ndjson` — 完整 160-run 原始数据
+- `maze_seal/` — paper §5 后处理流水线的 standalone package
+- `tools/regen_figure_mq_calc.py` 等 — paper figs 的 regen 脚本
+
+---
+
+## 🛠️ Tech stack
+
+- **Browser ES** — `src/search/es_searcher.js` (μ+λ ES loop)
+- **WebGPU compute shaders** — `src/gpu/` (CA 演化 + maze_quality 评估 single dispatch)
+- **IndexedDB persistence** — `src/storage.js`
+- **Pure-canvas renderer** — `src/render/grid.js` (60fps grid)
+- **Local ckpt HTTP server** — `ckpt_server.py` (Python http.server + JSON POST)
+- **Python package** — `maze_seal/` (网格 → 经典迷宫 5 步流水线)
+
+---
+
+## 📜 License & Citation
+
+[MIT](LICENSE) — © 2026 sko (冯卓源)
+
+引用用 [CITATION.cff](CITATION.cff) 或:
+
+```bibtex
+@software{mazeweb2026,
+  title  = {maze-web: Browser WebGPU ES for CA maze rules},
+  author = {Feng, Zhuoyuan (sko)},
+  year   = {2026},
+  url    = {https://github.com/sickoliveawa/maze-web-search}
+}
+```
+
+---
+
+## ✅ Verified
+
+- ✅ 160/160 sweep run 全部完成 (0 fail, 0 timeout)
+- ✅ top1 ckpt (sweep07_14_all_v71_manhattan-2_mf2_s3) bestScore = 0.7982
+- ✅ maze_quality vs 15-pattern 0/15 误判
+- ✅ Bellot F cell-based 复刻, 与 paper 方向一致
+- ✅ maze_seal 在所有 160 个 ckpt 上通过 spec (≥2 边界入口 + A↔B 通路)
+- ✅ src/ 12 个 .js + 子目录全部 `node --check` pass
+
+---
+
+## 🧰 调试 cheatsheet
 
 ```bash
-python _big_sweep_500x2000.py
-# → 5 seeds × ~67 min each = ~5.5 h
-# → writes sweep_2026_07_08_big/results.ndjson (gitignored)
+# 实时看 sweep 进度
+tail -f sweep_2026_07_14_all_v71/results.ndjson
+
+# ckpt server 日志
+# (它在 stdout, 用你启动时的那个 terminal 看)
+
+# 清所有 server
+# taskkill /F /IM python.exe  # ⚠️ 慎用, 会杀所有 python
 ```
 
-## Building the paper
+---
 
-```bash
-cd paper
-xelatex main_v1.2.tex    # pass 1
-xelatex main_v1.2.tex    # pass 2 (resolves \ref + table of contents)
-# → main_v1.2.pdf
-```
+## 📬 联系 / Contact
 
-## What's new in maze-web vs the Python maze-es reference
+- GitHub: [@sickoliveawa](https://github.com/sickoliveawa)
+- Project: https://github.com/sickoliveawa/maze-web-search
 
-- **state.js** — single state container with subscribe/emit (replaces the
-  Python project's `/api/*` server round-trips)
-- **storage.js** — IndexedDB persistence for saved batches (replaces the
-  Python project's Node server files)
-- **render/grid.js** — pure-canvas grid renderer
-- **4 tabs** — Configure / Train / Best / Preview
-- **gpu_scorer.js** — full batched WebGPU scorer (CA evolution + 8 sub-metric
-  evaluation in a single dispatch, on the GPU's actual ceiling)
-- **bellot_metrics.js** — faithful Bellot 2021 F = ν/δ implementation on GPU
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-## Citation
-
-See [CITATION.cff](CITATION.cff) or use the BibTeX entry in
-`paper/sections/08-appendix.tex`.
-
-## Verified
-
-- All 22 JS source files pass `node --check`.
-- M4 SOTA chromosome decoded correctly: 1 family, 14 cells, B=[0,1,3], S=[1..8].
-- `mazeQuality(M4 saved grid) = 0.766863` (bit-exact match with Python reference).
-- 6/6 paper headline checkpoints reproduce saved score to 1e-8 float precision
-  (see `_paper_v2_verify.py`).
-- Save → parse → decode chain verified byte-equal across 8 checkpoints
-  (disk == server GET == browser load).
+<sub>Built with WebGPU + ES + 一点点执念. Last sweep: 2026-07-14 to 2026-07-16, 21.92 h on a laptop GPU.</sub>
