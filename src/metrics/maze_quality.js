@@ -8,7 +8,7 @@
  *
  * 7 sub-metric:
  *   M_branching : 4-conn degree Shannon entropy (复用 normalizedBranchEntropy)
- *   M_spread    : pathRatio = longestPath / totalRoads (复用 patternComplexity)
+ *   M_spread    : pathRatio = longestPath / largestCompSize (sko 07-19 改, 旧: /totalRoads)
  *   M_junction  : junction count / total (复用 cellClassification)
  *   M_solve     : spatial balance (复用 quadrantBalance)
  *   M_pattern   : 2x2 patch Shannon entropy (复用 patternComplexity)
@@ -81,30 +81,29 @@ function mBranching(gridData, width, height) {
 }
 
 /**
- * M_spread: pathRatio = longestPath / totalRoads
- *   - 真 maze: 0.5-0.97 (树状, 1 条 long path 走遍 road)
- *   - ghost CA: 0.05-0.20 (cycle 太多, path 短)
- *   - spiral: 0.9+ (1 条 line 走完所有)
- *   - linear: 0.95+ (1 条对角线)
- *   - 反螺旋要再乘 spread factor (longestPath 不能占 80%+ nodes)
- *     实际上 spread = 1 - longestPath/V 才是 spread, 不是 pathRatio
- *   - 改用: M_spread = 1 - max(0, longestPath/V - 0.5) / 0.5
- *     longestPath/V = 0.5 → 1.0 (满分)
- *     longestPath/V = 0.7 → 0.6
- *     longestPath/V = 0.9 → 0.2
- *     longestPath/V = 1.0 → 0.0
- *   这样 35.70 diagonal (longestPath=27, V=100, ratio=0.27) → 满分
- *      spiral (longestPath=600, V=600) → 0
- *      真 DFS (longestPath=0.5*V) → 1
- *      ghost CA (longestPath=0.1*V) → 1
- *   - 但 ghost 会被 M_junction 拉低 (没 junction = 0)
- *   - spiral 也会被 M_branching 拉低 (几乎全 degree=2 → H 低)
+ * M_spread: pathRatio = longestPath / largestCompSize (sko 07-19 改分母)
+ *   sko 07-19: 旧公式 longestPath/totalRoads 在碎片图上 (spiral 离散化 → 7-8 块)
+ *     被稀释, ratio 低 (0.18-0.29), 误触发 "ratio<0.5 = 高分" 分支, M_spread≈0.6-0.97
+ *   新公式: longestPath/largestCompSize
+ *     - DFS maze (1 块): ratio = 0.5 → M_spread = 1 ✓
+ *     - Connected spiral (1 块): ratio ≈ 0.99 → M_spread = 0 ✓
+ *     - 碎片 spiral: ratio = longestPath(最大块内) / 最大块大小
+ *       看最大块本身的结构, 不被小碎片稀释
+ *   - 旧: ratio <= 0.5 → Math.min(1, ratio / 0.3)
+ *   - 新: 同样公式, 但 ratio 含义变了
  */
 function mSpread(gridData, width, height, totalRoads) {
-  // 调用 patternComplexity 拿 longestPath
+  // 调用 patternComplexity 拿 longestPath + largestCompSize
   const pc = patternComplexity(gridData, width, height);
+  return mSpreadFromPC(pc, totalRoads);
+}
+
+// sko 07-19: 抽出纯函数, 让 mazeQuality 可以复用 (避免 patternComplexity 调 2 次)
+function mSpreadFromPC(pc, totalRoads) {
   if (totalRoads === 0) return 0;
-  const ratio = pc.longestPath / totalRoads;
+  // sko 07-19: 分母 largestCompSize (was totalRoads)
+  const denom = pc.largestCompSize > 0 ? pc.largestCompSize : totalRoads;
+  const ratio = pc.longestPath / denom;
   // 0.3-0.5 是好, 0.5+ 是 spiral/linear 反例
   if (ratio <= 0.5) return Math.min(1, ratio / 0.3);  // 0 → 0, 0.3 → 1, 0.5 → 1
   // > 0.5 衰减
@@ -400,8 +399,10 @@ export function mazeQuality(gridData, width, height) {
   // 07-01: mC squaring was tried but reverted — only swapped attractors (old "nested frames"
   // → new "empty-box frame"), didn't push ES toward real maze topology. User prefers honest
   // linear metric. M_connectedness_raw preserved for diagnostic / future re-tuning.
+  // sko 07-19: 复用同一个 pc, 避免 mSpread 内调 patternComplexity 一次后这里又调一次
+  const pc = patternComplexity(gridData, width, height);
   const mB = mBranching(gridData, width, height);
-  const mS = mSpread(gridData, width, height, totalRoads);
+  const mS = mSpreadFromPC(pc, totalRoads);
   const mJ = mJunction(gridData, width, height);
   const mC_raw = mConnectedness(gridData, width, height);
   const mC = mC_raw;  // linear (07-01 reverted)
@@ -465,6 +466,10 @@ export function mazeQuality(gridData, width, height) {
       M_patch_uniqueness: mPatchUni, M_run_p95: mRun95,
       M_wall_ratio: countWalls(gridData) / gridData.length,
       M_WR_gate: m_WR_gate,
+      // sko 07-19: 新增诊断字段 — 用于对比 pathRatio 改分母的影响
+      longestPath: pc.longestPath,
+      totalRoads,
+      largestCompSize: pc.largestCompSize,
     },
   };
 }
@@ -560,32 +565,41 @@ export function _generateDFSMaze(W, H, seed = 42) {
  *   - 单条 1-cell 宽长廊, 起点外圈入口, 终点中心
  *   - 这是迷宫反例: 有 1 条贯穿全图的 path 但没有 branching/junction
  */
-export function _generateSpiral(W, H) {
+export function _generateSpiral(W, H, seed = 42) {
   // 连续 Archimedean 螺旋 (true single-stroke Archimedean-like spiral, 0 = wall, 1 = corridor)
   // 与 _generateDFSMaze (bellot convention: 0=wall, 1=corridor) 保持一致
   // 参数: r(t) = R * (1 - t / T), t ∈ [0, T]   T = turns * 2π
-  // 起点: r = R, theta = 0  (右, (cx+R, cy))
-  // 终点: r = 0, theta = T  (中心)
-  // R = min(cx, cy) - 1 (留 1 cell 给 border)
+  // seed controls (turns, nPoints, angle offset, radius jitter) for diversity.
+  //   seed === 42  → legacy deterministic spiral (turns=8, nPoints=8000, phi0=0, jitter=1.0)
+  //                  used by paper/_weight_sensitivity_15pat_baseline.json (must stay bit-identical).
+  //   other seed   → seed-controlled variant (turns∈[5,10], nPoints∈[4000,10000], phi0∈[0,2π), jitter∈[0.5,1.5]).
   const data = new Uint8Array(W * H).fill(0);  // 初始全 wall (0=wall)
   // 外圈保留 wall border
   for (let x = 0; x < W; x++) { data[x] = 0; data[(H - 1) * W + x] = 0; }
   for (let y = 0; y < H; y++) { data[y * W] = 0; data[y * W + (W - 1)] = 0; }
   const cx = (W - 1) / 2;
   const cy = (H - 1) / 2;
-  // R 留 2 cell 给 border (避免 spiral 太靠边)
   const R = Math.min(cx, cy) - 2;
-  // 8 圈让 wall_ratio 落在 0.40-0.60 (maze 范围), 不被 WR_gate 拒
-  const turns = 8;
+  let turns, nPoints, phi0, jitter;
+  if (seed === 42) {
+    // legacy — paper baseline (must match baseline.json bit-for-bit)
+    turns = 8; nPoints = 8000; phi0 = 0; jitter = 1.0;
+  } else {
+    let s = seed | 0;
+    const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+    turns = 5 + Math.floor(rnd() * 6);            // 5..10
+    nPoints = 4000 + Math.floor(rnd() * 6001);    // 4000..10000
+    phi0 = rnd() * 2 * Math.PI;
+    jitter = 0.5 + rnd() * 1.0;                    // radius jitter 0.5..1.5
+  }
   const T = turns * 2 * Math.PI;
-  const nPoints = 8000;
   for (let i = 0; i < nPoints; i++) {
     const t = (i / nPoints) * T;
-    const r = R * (1 - t / T);
-    const x = Math.round(cx + r * Math.cos(t));
-    const y = Math.round(cy + r * Math.sin(t));
+    const r = R * jitter * (1 - t / T);
+    const x = Math.round(cx + r * Math.cos(t + phi0));
+    const y = Math.round(cy + r * Math.sin(t + phi0));
     if (x > 0 && x < W - 1 && y > 0 && y < H - 1) {
-      data[y * W + x] = 1;  // corridor
+      data[y * W + x] = 1;
     }
   }
   return data;
@@ -594,12 +608,12 @@ export function _generateSpiral(W, H) {
 /**
  * 测试用: 生成 fractal tree (NOT self-symmetric — 用随机角度)
  */
-export function _generateFractalTree(W, H, depth = 4) {
+export function _generateFractalTree(W, H, depth = 4, seed = 12345) {
   const data = new Uint8Array(W * H);
   const cx = Math.floor(W / 2);
   const cy = Math.floor(H / 2);
-  // LCG
-  let s = 12345;
+  // LCG (seed param replaces hardcoded 12345 for diversity)
+  let s = seed | 0;
   function rand() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }
   function drawBranch(x, y, angle, len, d) {
     if (d <= 0 || len < 1) return;
@@ -644,10 +658,20 @@ export function _generateRandomNoise(W, H, density = 0.5, seed = 42) {
 /**
  * 测试用: 生成 horizontal stripes (高对称反例)
  */
-export function _generateStripes(W, H) {
+export function _generateStripes(W, H, seed = 42) {
+  // Horizontal stripes pseudo-pattern. seed selects (period, fill) variant:
+  //   seed % 4 == 0 → period=2 fill=0.5  (y%2<1 → 1 row on, 1 row off)
+  //   seed % 4 == 1 → period=3 fill=0.33 (y%3<1)
+  //   seed % 4 == 2 → period=4 fill=0.5  (y%4<2)
+  //   seed % 4 == 3 → period=5 fill=0.4  (y%5<2)
   const data = new Uint8Array(W * H);
+  const variant = seed % 4;
   for (let y = 0; y < H; y++) {
-    const fill = (y % 4 < 2) ? 1 : 0;  // 2 行 on, 2 行 off
+    let fill;
+    if (variant === 0)      fill = (y % 2 < 1) ? 1 : 0;
+    else if (variant === 1) fill = (y % 3 < 1) ? 1 : 0;
+    else if (variant === 2) fill = (y % 4 < 2) ? 1 : 0;
+    else                    fill = (y % 5 < 2) ? 1 : 0;
     for (let x = 0; x < W; x++) {
       data[y * W + x] = fill;
     }

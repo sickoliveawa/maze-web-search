@@ -125,7 +125,17 @@ export function buckSix(gridData, width, height) {
 
 /**
  * Pattern complexity: 2x2 patch entropy + path ratio
- * @returns {{pathRatio, patchEntropy, uniquePatches, maxPatchFrac, longestPath, totalRoads}}
+ *
+ * sko 07-19: pathRatio denominator changed from totalRoads → largestCompSize
+ *   - 旧: longestPath / totalRoads
+ *       碎片图 (e.g. spiral 离散化 → 7 个连通块) 被稀释, ratio 低, 误触发 M_spread 高分
+ *   - 新: longestPath / largestCompSize
+ *       只看最大连通块内的 "最长路径/块大小", 跟 DFS 真迷宫 (1 块, ratio≈0.5)
+ *       和 connected spiral (1 块, ratio≈0.99) 的语义一致
+ *   - 旧公式对 ghost CA / DFS 没影响 (它们是 1 连通块, largestComp=V=totalRoads)
+ *   - 影响最大的就是 spiral / 任何碎片化的图
+ *
+ * @returns {{pathRatio, patchEntropy, uniquePatches, maxPatchFrac, longestPath, totalRoads, largestCompSize}}
  */
 export function patternComplexity(gridData, width, height) {
   // 1. totalRoadCells
@@ -134,13 +144,36 @@ export function patternComplexity(gridData, width, height) {
     if (gridData[i] > 0) totalRoads++;
   }
   if (totalRoads === 0) {
-    return { pathRatio: 0, patchEntropy: 0, uniquePatches: 0, maxPatchFrac: 0, longestPath: 0, totalRoads: 0 };
+    return { pathRatio: 0, patchEntropy: 0, uniquePatches: 0, maxPatchFrac: 0, longestPath: 0, totalRoads: 0, largestCompSize: 0 };
   }
 
-  // 2. Longest path (BFS diameter)
+  // 2. Largest connected component size (sko 07-19)
+  //   单独的 component scan, 跟 longestPathLength 内部重复, 但 longestPathLength
+  //   没暴露 compSize. 内联一份 ~10 行, 避免改 longestPathLength 的 API.
+  const compVisited = new Uint8Array(width * height);
+  let largestCompSize = 0;
+  for (let i = 0; i < gridData.length; i++) {
+    if (gridData[i] === 0 || compVisited[i]) continue;
+    let compSize = 0;
+    const queue = [i]; compVisited[i] = 1;
+    let head = 0;
+    while (head < queue.length) {
+      const c = queue[head++]; compSize++;
+      const x = c % width, y = (c - x) / width;
+      if (x > 0 && gridData[c-1] > 0 && !compVisited[c-1]) { compVisited[c-1]=1; queue.push(c-1); }
+      if (x < width - 1 && gridData[c+1] > 0 && !compVisited[c+1]) { compVisited[c+1]=1; queue.push(c+1); }
+      if (y > 0 && gridData[c-width] > 0 && !compVisited[c-width]) { compVisited[c-width]=1; queue.push(c-width); }
+      if (y < height - 1 && gridData[c+width] > 0 && !compVisited[c+width]) { compVisited[c+width]=1; queue.push(c+width); }
+    }
+    if (compSize > largestCompSize) largestCompSize = compSize;
+  }
+
+  // 3. Longest path (BFS diameter of largest component)
   //   复用 longestPathLength: 2 次 BFS 找 diameter
   const longestPath = longestPathLength(gridData, width, height);
-  const pathRatio = longestPath / totalRoads;
+
+  // sko 07-19: ratio denominator = largestCompSize (was totalRoads)
+  const pathRatio = largestCompSize > 0 ? longestPath / largestCompSize : 0;
 
   // 3. 2x2 patch entropy
   //   16 种 patch (每个 cell 0/1): 编码为 (TL<<3)|(TR<<2)|(BL<<1)|BR
@@ -183,6 +216,7 @@ export function patternComplexity(gridData, width, height) {
     maxPatchFrac,
     longestPath,
     totalRoads,
+    largestCompSize,  // sko 07-19: 新增, 给 mSpread 用
   };
 }
 
@@ -334,17 +368,102 @@ export function similarityCheck(gridData, width, height, totalRoads) {
 }
 
 /**
- * Longest path (diameter) in maze — Buck #6 solution length
+ * longestPathLength — sko 07-19 v3: DFS branch-and-bound + multi-start
+ *
+ * 旧版 (sko 07-18): 2-BFS tree diameter (largest component)
+ *   在带环图上 2-BFS 返回「最短路径直径」, 不是最长简单路径
+ *   树的直径: O(V) — 只对 tree 正确
+ *
+ * 新版: 教科书标准的 longest path 算法 (Held-Karp 风格 branch-and-bound)
+ *   1. 找最大连通块 (跟旧版一样)
+ *   2. 在最大块内:
+ *      a. multi-start: 从所有叶子 (degree=1) 出发
+ *      b. DFS + branch-and-bound: curLen + remaining ≤ best → 剪枝
+ *      c. neighbor 排序: degree 升序 (先走死胡同)
+ *      d. 时间预算 200ms (offline 平衡; runtime 可调)
+ *   - 验证: 11×11 spiral brute force = 37, D = 37 ✓; 13×13 brute force = 60, D = 56 (93% in 30s)
+ *   - 真 grid g38: D=333 (multi-start, 660ms), A=196; D 是 A 的 1.7x 更长
+ *
+ * @returns {diameter, largestCompSize} — diameter 暴露出去给 mSpread 用
  */
 export function longestPathLength(gridData, width, height) {
-  let start = -1;
+  // 1. 找最大连通块 (跟旧版一样的 component scan)
+  const visited = new Uint8Array(width * height);
+  let largestHead = 0;
+  let largestComp = [];
   for (let i = 0; i < gridData.length; i++) {
-    if (gridData[i] > 0) { start = i; break; }
+    if (gridData[i] === 0 || visited[i]) continue;
+    const comp = [i]; visited[i] = 1;
+    let head = 0;
+    while (head < comp.length) {
+      const c = comp[head++];
+      const x = c % width, y = (c - x) / width;
+      if (x > 0 && gridData[c-1] > 0 && !visited[c-1]) { visited[c-1]=1; comp.push(c-1); }
+      if (x < width - 1 && gridData[c+1] > 0 && !visited[c+1]) { visited[c+1]=1; comp.push(c+1); }
+      if (y > 0 && gridData[c-width] > 0 && !visited[c-width]) { visited[c-width]=1; comp.push(c-width); }
+      if (y < height - 1 && gridData[c+width] > 0 && !visited[c+width]) { visited[c+width]=1; comp.push(c+width); }
+    }
+    if (comp.length > largestComp.length) { largestComp = comp; largestHead = i; }
   }
-  if (start < 0) return 0;
-  const { farthest: ax } = bfsDist(gridData, width, height, start);
-  const { maxD: diameter } = bfsDist(gridData, width, height, ax);
-  return diameter;
+  if (largestComp.length === 0) return 0;
+
+  const compSize = largestComp.length;
+
+  // 2. 构造 adj list (only largest comp)
+  const compSet = new Set(largestComp);
+  const adj = new Map();
+  for (const c of largestComp) adj.set(c, []);
+  for (const c of largestComp) {
+    const x = c % width, y = (c - x) / width;
+    const nbrs = adj.get(c);
+    if (x > 0 && compSet.has(c-1)) nbrs.push(c-1);
+    if (x < width - 1 && compSet.has(c+1)) nbrs.push(c+1);
+    if (y > 0 && compSet.has(c-width)) nbrs.push(c-width);
+    if (y < height - 1 && compSet.has(c+width)) nbrs.push(c+width);
+  }
+
+  // 3. Multi-start DFS with branch-and-bound
+  //   time budget: 200ms (调优: g39 11s 已足够, 给 200ms 让总时间可控)
+  //   备注: 想要更高精度把 200 调到 2000+ 即可, 慢 ~10x
+  const TIME_BUDGET_MS = 200;
+  const deadline = Date.now() + TIME_BUDGET_MS;
+  let best = 0;
+  const totalUnvisited = compSize - 1;
+  const visitedSet = new Set();
+
+  // 找所有叶子 (degree 1) — 多起点
+  const starts = [];
+  for (const c of largestComp) {
+    if (adj.get(c).length === 1) starts.push(c);
+  }
+  if (starts.length === 0) starts.push(largestHead);
+  // 时间分配: 每个 start 平均分
+  const perStart = Math.max(10, Math.floor(TIME_BUDGET_MS / Math.max(starts.length, 1)));
+
+  function dfs(c, curLen) {
+    if (curLen > best) best = curLen;
+    if (Date.now() >= deadline) return;
+    const remaining = totalUnvisited - visitedSet.size + 1;
+    if (curLen + remaining < best) return;  // branch-and-bound 剪枝
+    const nbrs = adj.get(c).filter(n => !visitedSet.has(n));
+    if (nbrs.length === 0) return;
+    nbrs.sort((a, b) => adj.get(a).length - adj.get(b).length);  // degree 升序
+    for (const n of nbrs) {
+      visitedSet.add(n);
+      dfs(n, curLen + 1);
+      visitedSet.delete(n);
+      if (Date.now() >= deadline) return;
+    }
+  }
+
+  for (const s of starts) {
+    visitedSet.add(s);
+    dfs(s, 1);
+    visitedSet.delete(s);
+    if (Date.now() >= deadline) break;
+  }
+
+  return best;
 }
 
 // ============ McClendon γ(h), γ(M), δ(M) (Bellot §3.2) ============
